@@ -25,6 +25,9 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 	if _, ok := a.storage[label]; !ok {
 		a.storage[label] = make(W)
 	}
+	if _, ok := a.storage[incorrectLabel]; !ok && incorrectLabel != "" {
+		a.storage[incorrectLabel] = make(W)
+	}
 
 	if margin <= -1 {
 		return
@@ -37,7 +40,7 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 		negVal := [2]float64{0, 1}
 		if val, ok := a.storage[incorrectLabel][elem.Dim]; ok {
 			copy(negVal[:], val[:2])
-		} else {
+		} else if incorrectLabel != "" {
 			a.storage[incorrectLabel][elem.Dim] = [3]float64{}
 		}
 		posVal := [2]float64{0, 1}
@@ -47,9 +50,11 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 			a.storage[label][elem.Dim] = [3]float64{}
 		}
 
-		a.storage[incorrectLabel][elem.Dim] = [3]float64{
-			negVal[0] - alpha * negVal[1] * elem.Value,
-			negVal[1] - beta * negVal[1] * negVal[1] * elem.Value * elem.Value,
+		if incorrectLabel != "" {
+			a.storage[incorrectLabel][elem.Dim] = [3]float64{
+				negVal[0] - alpha * negVal[1] * elem.Value,
+				negVal[1] - beta * negVal[1] * negVal[1] * elem.Value * elem.Value,
+			}
 		}
 
 		a.storage[label][elem.Dim] = [3]float64{
