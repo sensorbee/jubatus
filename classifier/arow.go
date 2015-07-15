@@ -132,28 +132,38 @@ func (s storage) calcScores(v FeatureVector) scores {
 
 func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label) (margin float64, variance float64, incorrect Label, err error) {
 	if len(s) == 0 {
-		err = errors.New("TODO")
-		return
-	}
-	if _, ok := s[l]; !ok {
-		err = errors.New("TODO")
 		return
 	}
 
 	scores := s.calcScores(v)
 	corrIx := scores.Find(l)
-	corr := &scores[corrIx]
-	scores[0], scores[corrIx] = scores[corrIx], scores[0]
-	_, incorr, _ := scores[1:].MinMax()
-	incorrect = incorr.label
-
-	margin = incorr.score - corr.score
-
-	for _, elem := range v {
-		corrCovar := s[corr.label][elem.Dim][1]
-		incorrCovar := s[incorr.label][elem.Dim][1]
-		variance += (corrCovar + incorrCovar) * elem.Value
+	if corrIx < 0 {
+		_, incorr, _ := scores.MinMax()
+		margin = incorr.score
+		incorrect = incorr.label
+		incorrV := s[incorrect]
+		for _, elem := range v {
+			variance += incorrV[elem.Dim][1] * elem.Value
+		}
+		return
 	}
-
+	corr := &scores[corrIx]
+	if len(s) == 1 {
+		margin = -corr.score
+		corrV := s[l]
+		for _, elem := range v {
+			variance += corrV[elem.Dim][1] * elem.Value
+		}
+	} else {
+		scores[0], scores[corrIx] = scores[corrIx], scores[0]
+		_, incorr, _ := scores[1:].MinMax()
+		margin = incorr.score - corr.score
+		corrV := s[l]
+		incorrect = incorr.label
+		incorrV := s[incorrect]
+		for _, elem := range v {
+			variance += (corrV[elem.Dim][1] + incorrV[elem.Dim][1]) * elem.Value
+		}
+	}
 	return
 }
