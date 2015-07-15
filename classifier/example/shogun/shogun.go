@@ -40,7 +40,7 @@ func classifyAndPrintln(given string) {
 		})
 	}
 	label := arow.Classify(fv)
-	fmt.Println(label, given)
+	fmt.Println(given, label)
 }
 
 type shogun struct {

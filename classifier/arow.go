@@ -2,6 +2,7 @@ package classifier
 
 import (
 	"errors"
+	"sort"
 )
 
 type Arow struct {
@@ -63,10 +64,10 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	return nil
 }
 
-func (a *Arow) Classify(v FeatureVector) Label {
+func (a *Arow) Classify(v FeatureVector) LScores {
 	scores := a.storage.calcScores(v)
-	_, ls, _ := scores.MinMax()
-	return ls.Label
+	sort.Sort(lScores(scores))
+	return scores
 }
 
 func (a *Arow) Clear() {
@@ -116,6 +117,20 @@ func (s LScores) Find(l Label) int {
 		}
 	}
 	return -1
+}
+
+type lScores LScores
+
+func (s lScores) Len() int {
+	return len(s)
+}
+
+func (s lScores) Less(i, j int) bool {
+	return s[i].Score > s[j].Score
+}
+
+func (s lScores) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
