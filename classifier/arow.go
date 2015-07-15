@@ -21,7 +21,7 @@ func NewArow(regWeight float64) (*Arow, error) {
 
 func (a *Arow) Train(v FeatureVector, label Label) error {
 	if label == "" {
-		return errors.New("label must not be empty string.")
+		return errors.New("label must not be empty.")
 	}
 
 	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
