@@ -41,14 +41,10 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		negVal := [2]float64{0, 1}
 		if val, ok := a.storage[incorrectLabel][elem.Dim]; ok {
 			copy(negVal[:], val[:2])
-		} else if incorrectLabel != "" {
-			a.storage[incorrectLabel][elem.Dim] = [2]float64{}
 		}
 		posVal := [2]float64{0, 1}
 		if val, ok := a.storage[label][elem.Dim]; ok {
 			copy(posVal[:], val[:2])
-		} else {
-			a.storage[label][elem.Dim] = [2]float64{}
 		}
 
 		if incorrectLabel != "" {
