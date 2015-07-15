@@ -25,7 +25,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		return err
 	}
 
-	if margin >= 1 {
+	if margin <= -1 {
 		if _, ok := a.storage[label]; !ok {
 			a.storage[label] = make(W)
 		}
@@ -33,7 +33,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	}
 
 	var beta float64 = 1 / (variance + 1 / a.RegWeight)
-	var alpha float64 = (1 - margin) * beta
+	var alpha float64 = (1 + margin) * beta
 
 	for _, elem := range v {
 		negVal := [2]float64{0, 1}
