@@ -121,10 +121,7 @@ func (s storage) calcScores(v FeatureVector) scores {
 	for l, w := range s {
 		ls := labelScore{label: l}
 		for _, x := range v {
-			y, ok := w[x.Dim]
-			if ok {
-				ls.score += x.Value * y[0]
-			}
+			ls.score += x.Value * w[x.Dim][0]
 		}
 		scores = append(scores, ls)
 	}
