@@ -22,10 +22,11 @@ func NewArow(regWeight float64) (*Arow, error) {
 func (a *Arow) Train(v FeatureVector, label Label) {
 	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
 
+	if _, ok := a.storage[label]; !ok {
+		a.storage[label] = make(W)
+	}
+
 	if margin <= -1 {
-		if _, ok := a.storage[label]; !ok {
-			a.storage[label] = make(W)
-		}
 		return
 	}
 
