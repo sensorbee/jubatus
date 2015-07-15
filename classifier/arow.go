@@ -19,17 +19,14 @@ func NewArow(regWeight float64) (*Arow, error) {
 	}, nil
 }
 
-func (a *Arow) Train(v FeatureVector, label Label) error {
-	margin, variance, incorrectLabel, err := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
-	if err != nil {
-		return err
-	}
+func (a *Arow) Train(v FeatureVector, label Label) {
+	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
 
 	if margin <= -1 {
 		if _, ok := a.storage[label]; !ok {
 			a.storage[label] = make(W)
 		}
-		return nil
+		return
 	}
 
 	var beta float64 = 1 / (variance + 1 / a.RegWeight)
@@ -54,16 +51,13 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		corr[1] = posVal[1] - beta * posVal[1] * posVal[1] * elem.Value * elem.Value
 	}
 
-	return nil
+	return
 }
 
-func (a *Arow) Classify(v FeatureVector) (Label, error) {
-	if len(a.storage) == 0 {
-		return "", errors.New("TODO")
-	}
+func (a *Arow) Classify(v FeatureVector) Label {
 	scores := a.storage.calcScores(v)
 	_, ls, _ := scores.MinMax()
-	return ls.label, nil
+	return ls.label
 }
 
 func (a *Arow) Clear() {
@@ -130,7 +124,7 @@ func (s storage) calcScores(v FeatureVector) scores {
 	return scores
 }
 
-func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label) (margin float64, variance float64, incorrect Label, err error) {
+func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label) (margin float64, variance float64, incorrect Label) {
 	if len(s) == 0 {
 		return
 	}
