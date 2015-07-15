@@ -97,12 +97,13 @@ func (s LScores) MinMax() (min *LScore, max *LScore, err error) {
 	}
 	min = &s[0]
 	max = &s[0]
-	for i, ls := range s[1:] {
+	for i, _ := range s[1:] {
+		ls := &s[i+1]
 		score := ls.Score
 		if min.Score > score {
-			min = &s[i+1]
+			min = ls
 		} else if max.Score < score {
-			max = &s[i+1]
+			max = ls
 		}
 	}
 	return
