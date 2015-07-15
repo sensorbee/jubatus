@@ -6,7 +6,7 @@ import (
 
 type Arow struct {
 	storage
-	RegWeight float64
+	regWeight float64
 }
 
 func NewArow(regWeight float64) (*Arow, error) {
@@ -15,7 +15,7 @@ func NewArow(regWeight float64) (*Arow, error) {
 	}
 	return &Arow{
 		storage:   make(storage),
-		RegWeight: regWeight,
+		regWeight: regWeight,
 	}, nil
 }
 
@@ -29,7 +29,7 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 		return
 	}
 
-	var beta float64 = 1 / (variance + 1 / a.RegWeight)
+	var beta float64 = 1 / (variance + 1 / a.regWeight)
 	var alpha float64 = (1 + margin) * beta
 
 	for _, elem := range v {
