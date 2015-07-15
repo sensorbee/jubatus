@@ -104,12 +104,12 @@ func (s scores) MinMax() (min *labelScore, max *labelScore, err error) {
 	}
 	min = &s[0]
 	max = &s[0]
-	for _, ls := range s {
+	for i, ls := range s[1:] {
 		score := ls.score
 		if min.score > score {
-			min = &ls
+			min = &s[i+1]
 		} else if max.score < score {
-			max = &ls
+			max = &s[i+1]
 		}
 	}
 	return
