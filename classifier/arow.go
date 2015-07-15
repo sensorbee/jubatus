@@ -105,13 +105,13 @@ func (s scores) MinMax() (min *labelScore, max *labelScore, err error) {
 	return
 }
 
-func (s scores) Find(l Label) (*labelScore, bool) {
-	for _, ls := range s {
+func (s scores) Find(l Label) int {
+	for i, ls := range s {
 		if ls.label == l {
-			return &ls, true
+			return i
 		}
 	}
-	return nil, false
+	return -1
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
@@ -141,8 +141,10 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	}
 
 	scores := s.calcScores(v)
-	corr, _ := scores.Find(l)
-	incorr, _, _ := scores.MinMax()
+	corrIx := scores.Find(l)
+	corr := &scores[corrIx]
+	scores[0], scores[corrIx] = scores[corrIx], scores[0]
+	_, incorr, _ := scores[1:].MinMax()
 	incorrect = incorr.label
 
 	margin = incorr.score - corr.score
