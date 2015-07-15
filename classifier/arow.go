@@ -73,7 +73,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 func (a *Arow) Classify(v FeatureVector) Label {
 	scores := a.storage.calcScores(v)
 	_, ls, _ := scores.MinMax()
-	return ls.label
+	return ls.Label
 }
 
 func (a *Arow) Clear() {
@@ -91,13 +91,13 @@ type Label string
 type W map[Dim][2]float64
 type storage map[Label]W
 
-type labelScore struct {
-	label Label
-	score float64
+type LScore struct {
+	Label Label
+	Score float64
 }
-type scores []labelScore
+type LScores []LScore
 
-func (s scores) MinMax() (min *labelScore, max *labelScore, err error) {
+func (s LScores) MinMax() (min *LScore, max *LScore, err error) {
 	if len(s) == 0 {
 		err = errors.New("TODO")
 		return
@@ -105,19 +105,19 @@ func (s scores) MinMax() (min *labelScore, max *labelScore, err error) {
 	min = &s[0]
 	max = &s[0]
 	for i, ls := range s[1:] {
-		score := ls.score
-		if min.score > score {
+		score := ls.Score
+		if min.Score > score {
 			min = &s[i+1]
-		} else if max.score < score {
+		} else if max.Score < score {
 			max = &s[i+1]
 		}
 	}
 	return
 }
 
-func (s scores) Find(l Label) int {
+func (s LScores) Find(l Label) int {
 	for i, ls := range s {
-		if ls.label == l {
+		if ls.Label == l {
 			return i
 		}
 	}
@@ -125,12 +125,12 @@ func (s scores) Find(l Label) int {
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
-func (s storage) calcScores(v FeatureVector) scores {
-	scores := make(scores, 0, len(s))
+func (s storage) calcScores(v FeatureVector) LScores {
+	scores := make(LScores, 0, len(s))
 	for l, w := range s {
-		ls := labelScore{label: l}
+		ls := LScore{Label: l}
 		for _, x := range v {
-			ls.score += x.Value * w[x.Dim][0]
+			ls.Score += x.Value * w[x.Dim][0]
 		}
 		scores = append(scores, ls)
 	}
@@ -146,8 +146,8 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	corrIx := scores.Find(l)
 	if corrIx < 0 {
 		_, incorr, _ := scores.MinMax()
-		margin = incorr.score
-		incorrect = incorr.label
+		margin = incorr.Score
+		incorrect = incorr.Label
 		incorrV := s[incorrect]
 		for _, elem := range v {
 			if _, ok := incorrV[elem.Dim]; ok {
@@ -160,7 +160,7 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	}
 	corr := &scores[corrIx]
 	if len(s) == 1 {
-		margin = -corr.score
+		margin = -corr.Score
 		corrV := s[l]
 		for _, elem := range v {
 			if _, ok := corrV[elem.Dim]; ok {
@@ -172,9 +172,9 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	} else {
 		scores[0], scores[corrIx] = scores[corrIx], scores[0]
 		_, incorr, _ := scores[1:].MinMax()
-		margin = incorr.score - corr.score
+		margin = incorr.Score - corr.Score
 		corrV := s[l]
-		incorrect = incorr.label
+		incorrect = incorr.Label
 		incorrV := s[incorrect]
 		for _, elem := range v {
 			c := 1.0
