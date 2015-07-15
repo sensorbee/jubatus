@@ -19,7 +19,11 @@ func NewArow(regWeight float64) (*Arow, error) {
 	}, nil
 }
 
-func (a *Arow) Train(v FeatureVector, label Label) {
+func (a *Arow) Train(v FeatureVector, label Label) error {
+	if label == "" {
+		return errors.New("label must not be empty string.")
+	}
+
 	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
 
 	if _, ok := a.storage[label]; !ok {
@@ -30,7 +34,7 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 	}
 
 	if margin <= -1 {
-		return
+		return nil
 	}
 
 	var beta float64 = 1 / (variance + 1 / a.regWeight)
@@ -63,7 +67,7 @@ func (a *Arow) Train(v FeatureVector, label Label) {
 		}
 	}
 
-	return
+	return nil
 }
 
 func (a *Arow) Classify(v FeatureVector) Label {
