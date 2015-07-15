@@ -150,7 +150,11 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 		incorrect = incorr.label
 		incorrV := s[incorrect]
 		for _, elem := range v {
-			variance += incorrV[elem.Dim][1] * elem.Value
+			if _, ok := incorrV[elem.Dim]; ok {
+				variance += (1 + incorrV[elem.Dim][1]) * elem.Value
+			} else {
+				variance += 2 * elem.Value
+			}
 		}
 		return
 	}
@@ -159,7 +163,11 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 		margin = -corr.score
 		corrV := s[l]
 		for _, elem := range v {
-			variance += corrV[elem.Dim][1] * elem.Value
+			if _, ok := corrV[elem.Dim]; ok {
+				variance += (corrV[elem.Dim][1] + 1) * elem.Value
+			} else {
+				variance += 2 * elem.Value
+			}
 		}
 	} else {
 		scores[0], scores[corrIx] = scores[corrIx], scores[0]
@@ -169,7 +177,15 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 		incorrect = incorr.label
 		incorrV := s[incorrect]
 		for _, elem := range v {
-			variance += (corrV[elem.Dim][1] + incorrV[elem.Dim][1]) * elem.Value
+			c := 1.0
+			i := 1.0
+			if _, ok := corrV[elem.Dim]; ok {
+				c = corrV[elem.Dim][1]
+			}
+			if _, ok := incorrV[elem.Dim]; ok {
+				i = incorrV[elem.Dim][1]
+			}
+			variance += (c + i) * elem.Value
 		}
 	}
 	return
