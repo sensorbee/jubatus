@@ -45,23 +45,23 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		if val, ok := a.storage[incorrectLabel][elem.Dim]; ok {
 			copy(negVal[:], val[:2])
 		} else if incorrectLabel != "" {
-			a.storage[incorrectLabel][elem.Dim] = [3]float64{}
+			a.storage[incorrectLabel][elem.Dim] = [2]float64{}
 		}
 		posVal := [2]float64{0, 1}
 		if val, ok := a.storage[label][elem.Dim]; ok {
 			copy(posVal[:], val[:2])
 		} else {
-			a.storage[label][elem.Dim] = [3]float64{}
+			a.storage[label][elem.Dim] = [2]float64{}
 		}
 
 		if incorrectLabel != "" {
-			a.storage[incorrectLabel][elem.Dim] = [3]float64{
+			a.storage[incorrectLabel][elem.Dim] = [2]float64{
 				negVal[0] - alpha * negVal[1] * elem.Value,
 				negVal[1] - beta * negVal[1] * negVal[1] * elem.Value * elem.Value,
 			}
 		}
 
-		a.storage[label][elem.Dim] = [3]float64{
+		a.storage[label][elem.Dim] = [2]float64{
 			posVal[0] + alpha * posVal[1] * elem.Value,
 			posVal[1] - beta * posVal[1] * posVal[1] * elem.Value * elem.Value,
 		}
@@ -88,7 +88,7 @@ type FeatureElement struct {
 type FeatureVector []FeatureElement
 
 type Label string
-type W map[Dim][3]float64
+type W map[Dim][2]float64
 type storage map[Label]W
 
 type labelScore struct {
