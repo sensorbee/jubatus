@@ -29,9 +29,6 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	if _, ok := a.storage[label]; !ok {
 		a.storage[label] = make(W)
 	}
-	if _, ok := a.storage[incorrectLabel]; !ok && incorrectLabel != "" {
-		a.storage[incorrectLabel] = make(W)
-	}
 
 	if margin <= -1 {
 		return nil
