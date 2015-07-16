@@ -39,25 +39,30 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	var alpha float64 = (1 + margin) * beta
 
 	for _, elem := range v {
+		dim := elem.Dim
+		value := elem.Value
+
 		negVal := [2]float64{0, 1}
-		if val, ok := a.storage[incorrectLabel][elem.Dim]; ok {
-			copy(negVal[:], val[:2])
+		if incorrectLabel != "" {
+			if val, ok := a.storage[incorrectLabel][dim]; ok {
+				copy(negVal[:], val[:2])
+			}
 		}
 		posVal := [2]float64{0, 1}
-		if val, ok := a.storage[label][elem.Dim]; ok {
+		if val, ok := a.storage[label][dim]; ok {
 			copy(posVal[:], val[:2])
 		}
 
 		if incorrectLabel != "" {
-			a.storage[incorrectLabel][elem.Dim] = [2]float64{
-				negVal[0] - alpha*negVal[1]*elem.Value,
-				negVal[1] - beta*negVal[1]*negVal[1]*elem.Value*elem.Value,
+			a.storage[incorrectLabel][dim] = [2]float64{
+				negVal[0] - alpha*negVal[1]*value,
+				negVal[1] - beta*negVal[1]*negVal[1]*value*value,
 			}
 		}
 
-		a.storage[label][elem.Dim] = [2]float64{
-			posVal[0] + alpha*posVal[1]*elem.Value,
-			posVal[1] - beta*posVal[1]*posVal[1]*elem.Value*elem.Value,
+		a.storage[label][dim] = [2]float64{
+			posVal[0] + alpha*posVal[1]*value,
+			posVal[1] - beta*posVal[1]*posVal[1]*value*value,
 		}
 	}
 
