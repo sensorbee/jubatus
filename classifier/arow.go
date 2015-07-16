@@ -156,7 +156,6 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	}
 
 	scores := s.calcScores(v)
-	sort.Sort(lScores(scores))
 	corrIx := scores.Find(l)
 	if corrIx < 0 {
 		_, incorr, _ := scores.MinMax()
@@ -172,9 +171,8 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 		}
 		return
 	}
-	corr := &scores[corrIx]
 	if len(s) == 1 {
-		margin = -corr.Score
+		margin = -scores[0].Score
 		corrV := s[l]
 		for _, elem := range v {
 			if _, ok := corrV[elem.Dim]; ok {
@@ -186,7 +184,7 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	} else {
 		scores[0], scores[corrIx] = scores[corrIx], scores[0]
 		_, incorr, _ := scores[1:].MinMax()
-		margin = incorr.Score - corr.Score
+		margin = incorr.Score - scores[0].Score
 		corrV := s[l]
 		incorrect = incorr.Label
 		incorrV := s[incorrect]
