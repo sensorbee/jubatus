@@ -156,6 +156,7 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	}
 
 	scores := s.calcScores(v)
+	sort.Sort(lScores(scores))
 	corrIx := scores.Find(l)
 	if corrIx < 0 {
 		_, incorr, _ := scores.MinMax()
