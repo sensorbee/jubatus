@@ -74,6 +74,10 @@ func (a *Arow) Clear() {
 	a.storage = make(storage)
 }
 
+func (a *Arow) RegWeight() float64 {
+	return a.regWeight
+}
+
 type Dim string
 type FeatureElement struct {
 	Dim
