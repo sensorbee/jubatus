@@ -42,32 +42,21 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	var beta float64 = 1 / (variance + 1/a.regWeight)
 	var alpha float64 = (1 + margin) * beta
 
+	var incorrWeights weights
+	if incorr != nil {
+		incorrWeights = a.storage[incorr.Label]
+	}
+	var corrWeights weights = a.storage[label]
+
 	for _, elem := range v {
 		dim := elem.Dim
 		value := elem.Value
 
-		neg := weight{weight: 0, confidence: 1}
 		if incorr != nil {
-			if w, ok := a.storage[incorr.Label][dim]; ok {
-				neg = w
-			}
-		}
-		pos := weight{weight: 0, confidence: 1}
-		if w, ok := a.storage[label][dim]; ok {
-			pos = w
+			incorrWeights.negativeUpdate(alpha, beta, dim, value)
 		}
 
-		if incorr != nil {
-			a.storage[incorr.Label][dim] = weight{
-				weight:     neg.weight - alpha*neg.confidence*value,
-				confidence: neg.confidence - beta*neg.confidence*neg.confidence*value*value,
-			}
-		}
-
-		a.storage[label][dim] = weight{
-			pos.weight + alpha*pos.confidence*value,
-			pos.confidence - beta*pos.confidence*pos.confidence*value*value,
-		}
+		corrWeights.positiveUpdate(alpha, beta, dim, value)
 	}
 
 	return nil
@@ -101,6 +90,59 @@ type weight struct {
 }
 type weights map[Dim]weight
 type storage map[Label]weights
+
+func initialWeight() weight {
+	return weight{
+		weight:     0,
+		confidence: 1,
+	}
+}
+
+func (ws weights) negativeUpdate(alpha, beta float64, dim Dim, x float64) {
+	ws.update(alpha, beta, dim, x, (*weight).negativeUpdate)
+}
+
+func (ws weights) positiveUpdate(alpha, beta float64, dim Dim, x float64) {
+	ws.update(alpha, beta, dim, x, (*weight).positiveUpdate)
+}
+
+func (ws weights) update(alpha, beta float64, dim Dim, x float64, f weightUpdateFunction) {
+	var weight weight
+	if w, ok := ws[dim]; ok {
+		weight = w
+	} else {
+		weight = initialWeight()
+	}
+	f(&weight, alpha, beta, x)
+	ws[dim] = weight
+}
+
+type weightUpdateFunction func(w *weight, alpha, beta, x float64)
+
+func (w *weight) negativeUpdate(alpha, beta, x float64) {
+	aTerm := w.calcAlphaTerm(alpha, x)
+	bTerm := w.calcBetaTerm(beta, x)
+	w.weight -= aTerm
+	w.confidence -= bTerm
+	return
+}
+
+func (w *weight) positiveUpdate(alpha, beta, x float64) {
+	aTerm := w.calcAlphaTerm(alpha, x)
+	bTerm := w.calcBetaTerm(beta, x)
+	w.weight += aTerm
+	w.confidence -= bTerm
+	return
+}
+
+func (w *weight) calcAlphaTerm(alpha, x float64) float64 {
+	return alpha * w.confidence * x
+}
+
+func (w *weight) calcBetaTerm(beta, x float64) float64 {
+	conf := w.confidence
+	return beta * conf * conf * x * x
+}
 
 type LScore struct {
 	Label Label
