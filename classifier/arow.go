@@ -29,11 +29,15 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		a.storage[label] = make(W)
 	}
 
-	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
+	scores := a.storage.calcScores(v)
+	corr, incorr := scores.getCorrectAndIncorrect(label)
+	margin := calcMargin(corr, incorr)
 
 	if margin <= -1 {
 		return nil
 	}
+
+	variance := calcVariance(v, a.storage[label], a.storage[incorr.labelOrElse("")])
 
 	var beta float64 = 1 / (variance + 1/a.regWeight)
 	var alpha float64 = (1 + margin) * beta
@@ -43,8 +47,8 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		value := elem.Value
 
 		negVal := [2]float64{0, 1}
-		if incorrectLabel != "" {
-			if val, ok := a.storage[incorrectLabel][dim]; ok {
+		if incorr != nil {
+			if val, ok := a.storage[incorr.Label][dim]; ok {
 				copy(negVal[:], val[:2])
 			}
 		}
@@ -53,8 +57,8 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 			copy(posVal[:], val[:2])
 		}
 
-		if incorrectLabel != "" {
-			a.storage[incorrectLabel][dim] = [2]float64{
+		if incorr != nil {
+			a.storage[incorr.Label][dim] = [2]float64{
 				negVal[0] - alpha*negVal[1]*value,
 				negVal[1] - beta*negVal[1]*negVal[1]*value*value,
 			}
@@ -156,6 +160,18 @@ func (s LScores) Find(l Label) int {
 	return -1
 }
 
+func (s LScores) getCorrectAndIncorrect(l Label) (correct *LScore, incorrect *LScore) {
+	corrIx := s.Find(l)
+	if corrIx >= 0 {
+		correct = &s[corrIx]
+		incorrect = s.maxExcept(corrIx)
+	} else {
+		incorrect = s.Max()
+	}
+
+	return
+}
+
 type lScores LScores
 
 func (s lScores) Len() int {
@@ -183,26 +199,8 @@ func (s storage) calcScores(v FeatureVector) LScores {
 	return scores
 }
 
-func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label) (margin float64, variance float64, incorrect Label) {
-	if len(s) == 0 {
-		return
-	}
-
-	scores := s.calcScores(v)
-	corrIx := scores.Find(l)
-	var corr, incorr *LScore
-	if corrIx >= 0 {
-		corr = &scores[corrIx]
-		incorr = scores.maxExcept(corrIx)
-	} else {
-		incorr = scores.Max()
-	}
-	margin = incorr.scoreOrElse(0) - corr.scoreOrElse(0)
-	incorrect = incorr.labelOrElse("")
-	corrV := s[l]
-	incorrV := s[incorrect]
-	variance = calcVariance(v, corrV, incorrV)
-	return
+func calcMargin(correct *LScore, incorrect *LScore) float64 {
+	return incorrect.scoreOrElse(0) - correct.scoreOrElse(0)
 }
 
 func calcVariance(v FeatureVector, w1, w2 W) float64 {
