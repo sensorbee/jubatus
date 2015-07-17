@@ -25,11 +25,11 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		return errors.New("label must not be empty.")
 	}
 
-	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
-
 	if _, ok := a.storage[label]; !ok {
 		a.storage[label] = make(W)
 	}
+
+	margin, variance, incorrectLabel := a.storage.calcMarginAndVarianceAndIncorrectLabel(v, label)
 
 	if margin <= -1 {
 		return nil
