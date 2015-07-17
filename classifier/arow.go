@@ -119,7 +119,7 @@ func (ls *LScore) scoreOrElse(defaultS float64) float64 {
 
 type LScores []LScore
 
-func (s LScores) Max() *LScore {
+func (s LScores) max() *LScore {
 	if len(s) == 0 {
 		return nil
 	}
@@ -134,11 +134,11 @@ func (s LScores) Max() *LScore {
 
 func (s LScores) maxExcept(except int) *LScore {
 	if except < 0 || except >= len(s) {
-		return s.Max()
+		return s.max()
 	}
 
-	l := s[:except].Max()
-	r := s[except+1:].Max()
+	l := s[:except].max()
+	r := s[except+1:].max()
 	if l == nil {
 		return r
 	}
@@ -151,7 +151,7 @@ func (s LScores) maxExcept(except int) *LScore {
 	return l
 }
 
-func (s LScores) Find(l Label) int {
+func (s LScores) find(l Label) int {
 	for i, ls := range s {
 		if ls.Label == l {
 			return i
@@ -161,12 +161,12 @@ func (s LScores) Find(l Label) int {
 }
 
 func (s LScores) getCorrectAndIncorrect(l Label) (correct *LScore, incorrect *LScore) {
-	corrIx := s.Find(l)
+	corrIx := s.find(l)
 	if corrIx >= 0 {
 		correct = &s[corrIx]
 		incorrect = s.maxExcept(corrIx)
 	} else {
-		incorrect = s.Max()
+		incorrect = s.max()
 	}
 
 	return
