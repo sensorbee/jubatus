@@ -132,13 +132,13 @@ func (s LScores) max() *LScore {
 	return ret
 }
 
-func (s LScores) maxExcept(except int) *LScore {
-	if except < 0 || except >= len(s) {
+func (s LScores) maxExcept(exceptIx int) *LScore {
+	if exceptIx < 0 || exceptIx >= len(s) {
 		return s.max()
 	}
 
-	l := s[:except].max()
-	r := s[except+1:].max()
+	l := s[:exceptIx].max()
+	r := s[exceptIx+1:].max()
 	if l == nil {
 		return r
 	}
