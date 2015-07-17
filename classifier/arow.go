@@ -98,6 +98,21 @@ type LScore struct {
 	Label Label
 	Score float64
 }
+
+func (ls *LScore) labelOrElse(defaultL Label) Label {
+	if ls == nil {
+		return defaultL
+	}
+	return ls.Label
+}
+
+func (ls *LScore) scoreOrElse(defaultS float64) float64 {
+	if ls == nil {
+		return defaultS
+	}
+	return ls.Score
+}
+
 type LScores []LScore
 
 func (s LScores) Max() *LScore {
@@ -111,6 +126,25 @@ func (s LScores) Max() *LScore {
 		}
 	}
 	return ret
+}
+
+func (s LScores) maxExcept(except int) *LScore {
+	if except < 0 || except >= len(s) {
+		return s.Max()
+	}
+
+	l := s[:except].Max()
+	r := s[except+1:].Max()
+	if l == nil {
+		return r
+	}
+	if r == nil {
+		return l
+	}
+	if l.Score < r.Score {
+		return r
+	}
+	return l
 }
 
 func (s LScores) Find(l Label) int {
@@ -156,27 +190,18 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 
 	scores := s.calcScores(v)
 	corrIx := scores.Find(l)
-	if corrIx < 0 {
-		incorr := scores.Max()
-		margin = incorr.Score
-		incorrect = incorr.Label
-		incorrV := s[incorrect]
-		variance = calcVariance(v, incorrV, nil)
-		return
-	}
-	if len(s) == 1 {
-		margin = -scores[0].Score
-		corrV := s[l]
-		variance = calcVariance(v, corrV, nil)
+	var corr, incorr *LScore
+	if corrIx >= 0 {
+		corr = &scores[corrIx]
+		incorr = scores.maxExcept(corrIx)
 	} else {
-		scores[0], scores[corrIx] = scores[corrIx], scores[0]
-		incorr := scores[1:].Max()
-		margin = incorr.Score - scores[0].Score
-		corrV := s[l]
-		incorrect = incorr.Label
-		incorrV := s[incorrect]
-		variance = calcVariance(v, corrV, incorrV)
+		incorr = scores.Max()
 	}
+	margin = incorr.scoreOrElse(0) - corr.scoreOrElse(0)
+	incorrect = incorr.labelOrElse("")
+	corrV := s[l]
+	incorrV := s[incorrect]
+	variance = calcVariance(v, corrV, incorrV)
 	return
 }
 
