@@ -100,9 +100,8 @@ type LScore struct {
 }
 type LScores []LScore
 
-func (s LScores) MinMax() (min *LScore, max *LScore, err error) {
+func (s LScores) MinMax() (min *LScore, max *LScore) {
 	if len(s) == 0 {
-		err = errors.New("TODO")
 		return
 	}
 	min = &s[0]
@@ -163,7 +162,7 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 	scores := s.calcScores(v)
 	corrIx := scores.Find(l)
 	if corrIx < 0 {
-		_, incorr, _ := scores.MinMax()
+		_, incorr := scores.MinMax()
 		margin = incorr.Score
 		incorrect = incorr.Label
 		incorrV := s[incorrect]
@@ -176,7 +175,7 @@ func (s storage) calcMarginAndVarianceAndIncorrectLabel(v FeatureVector, l Label
 		variance = calcVariance(v, corrV, nil)
 	} else {
 		scores[0], scores[corrIx] = scores[corrIx], scores[0]
-		_, incorr, _ := scores[1:].MinMax()
+		_, incorr := scores[1:].MinMax()
 		margin = incorr.Score - scores[0].Score
 		corrV := s[l]
 		incorrect = incorr.Label
