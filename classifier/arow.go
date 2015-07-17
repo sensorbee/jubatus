@@ -26,7 +26,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	}
 
 	if _, ok := a.storage[label]; !ok {
-		a.storage[label] = make(W)
+		a.storage[label] = make(weights)
 	}
 
 	scores := a.storage.calcScores(v)
@@ -46,27 +46,27 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		dim := elem.Dim
 		value := elem.Value
 
-		negVal := [2]float64{0, 1}
+		neg := weight{weight: 0, confidence: 1}
 		if incorr != nil {
-			if val, ok := a.storage[incorr.Label][dim]; ok {
-				copy(negVal[:], val[:2])
+			if w, ok := a.storage[incorr.Label][dim]; ok {
+				neg = w
 			}
 		}
-		posVal := [2]float64{0, 1}
-		if val, ok := a.storage[label][dim]; ok {
-			copy(posVal[:], val[:2])
+		pos := weight{weight: 0, confidence: 1}
+		if w, ok := a.storage[label][dim]; ok {
+			pos = w
 		}
 
 		if incorr != nil {
-			a.storage[incorr.Label][dim] = [2]float64{
-				negVal[0] - alpha*negVal[1]*value,
-				negVal[1] - beta*negVal[1]*negVal[1]*value*value,
+			a.storage[incorr.Label][dim] = weight{
+				weight:     neg.weight - alpha*neg.confidence*value,
+				confidence: neg.confidence - beta*neg.confidence*neg.confidence*value*value,
 			}
 		}
 
-		a.storage[label][dim] = [2]float64{
-			posVal[0] + alpha*posVal[1]*value,
-			posVal[1] - beta*posVal[1]*posVal[1]*value*value,
+		a.storage[label][dim] = weight{
+			pos.weight + alpha*pos.confidence*value,
+			pos.confidence - beta*pos.confidence*pos.confidence*value*value,
 		}
 	}
 
@@ -95,8 +95,12 @@ type FeatureElement struct {
 type FeatureVector []FeatureElement
 
 type Label string
-type W map[Dim][2]float64
-type storage map[Label]W
+type weight struct {
+	weight     float64
+	confidence float64
+}
+type weights map[Dim]weight
+type storage map[Label]weights
 
 type LScore struct {
 	Label Label
@@ -192,7 +196,7 @@ func (s storage) calcScores(v FeatureVector) LScores {
 	for l, w := range s {
 		ls := LScore{Label: l}
 		for _, x := range v {
-			ls.Score += x.Value * w[x.Dim][0]
+			ls.Score += x.Value * w[x.Dim].weight
 		}
 		scores = append(scores, ls)
 	}
@@ -203,7 +207,7 @@ func calcMargin(correct *LScore, incorrect *LScore) float64 {
 	return incorrect.scoreOrElse(0) - correct.scoreOrElse(0)
 }
 
-func calcVariance(v FeatureVector, w1, w2 W) float64 {
+func calcVariance(v FeatureVector, w1, w2 weights) float64 {
 	variance := 0.0
 	for _, elem := range v {
 		dim := elem.Dim
@@ -214,12 +218,12 @@ func calcVariance(v FeatureVector, w1, w2 W) float64 {
 }
 
 // TODO: consider to rename
-func (w W) covar(dim Dim) float64 {
-	if w == nil {
+func (ws weights) covar(dim Dim) float64 {
+	if ws == nil {
 		return 1
 	}
-	if c, ok := w[dim]; ok {
-		return c[1]
+	if w, ok := ws[dim]; ok {
+		return w.confidence
 	}
 	return 1
 }
