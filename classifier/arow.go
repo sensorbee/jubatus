@@ -6,23 +6,23 @@ import (
 	"sync"
 )
 
-type Arow struct {
+type AROW struct {
 	model
 	regWeight float32
 	m         sync.Mutex
 }
 
-func NewArow(regWeight float32) (*Arow, error) {
+func NewArow(regWeight float32) (*AROW, error) {
 	if regWeight <= 0 {
 		return nil, errors.New("regularization weight must be larger than zero.")
 	}
-	return &Arow{
+	return &AROW{
 		model:     make(model),
 		regWeight: regWeight,
 	}, nil
 }
 
-func (a *Arow) Train(v FeatureVector, label Label) error {
+func (a *AROW) Train(v FeatureVector, label Label) error {
 	a.m.Lock()
 	defer a.m.Unlock()
 
@@ -67,7 +67,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 	return nil
 }
 
-func (a *Arow) Classify(v FeatureVector) LScores {
+func (a *AROW) Classify(v FeatureVector) LScores {
 	a.m.Lock()
 	defer a.m.Unlock()
 	scores := a.model.scores(v)
@@ -75,13 +75,13 @@ func (a *Arow) Classify(v FeatureVector) LScores {
 	return scores
 }
 
-func (a *Arow) Clear() {
+func (a *AROW) Clear() {
 	a.m.Lock()
 	defer a.m.Unlock()
 	a.model = make(model)
 }
 
-func (a *Arow) RegWeight() float32 {
+func (a *AROW) RegWeight() float32 {
 	return a.regWeight
 }
 
