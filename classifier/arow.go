@@ -29,15 +29,15 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		a.model[label] = make(weights)
 	}
 
-	scores := a.model.calcScores(v)
-	corr, incorr := scores.getCorrectAndIncorrect(label)
-	margin := calcMargin(corr, incorr)
+	scores := a.model.scores(v)
+	corr, incorr := scores.correctAndIncorrect(label)
+	margin := margin(corr, incorr)
 
 	if margin <= -1 {
 		return nil
 	}
 
-	variance := calcVariance(v, a.model[label], a.model[incorr.labelOrElse("")])
+	variance := variance(v, a.model[label], a.model[incorr.labelOrElse("")])
 
 	var beta float32 = 1 / (variance + 1/a.regWeight)
 	var alpha float32 = (1 + margin) * beta
@@ -63,7 +63,7 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 }
 
 func (a *Arow) Classify(v FeatureVector) LScores {
-	scores := a.model.calcScores(v)
+	scores := a.model.scores(v)
 	sort.Sort(lScores(scores))
 	return scores
 }
@@ -120,26 +120,26 @@ func (ws weights) update(alpha, beta float32, dim Dim, x float32, f weightUpdate
 type weightUpdateFunction func(w *weight, alpha, beta, x float32)
 
 func (w *weight) negativeUpdate(alpha, beta, x float32) {
-	aTerm := w.calcAlphaTerm(alpha, x)
-	bTerm := w.calcBetaTerm(beta, x)
+	aTerm := w.alphaTerm(alpha, x)
+	bTerm := w.betaTerm(beta, x)
 	w.weight -= aTerm
 	w.covariance -= bTerm
 	return
 }
 
 func (w *weight) positiveUpdate(alpha, beta, x float32) {
-	aTerm := w.calcAlphaTerm(alpha, x)
-	bTerm := w.calcBetaTerm(beta, x)
+	aTerm := w.alphaTerm(alpha, x)
+	bTerm := w.betaTerm(beta, x)
 	w.weight += aTerm
 	w.covariance -= bTerm
 	return
 }
 
-func (w *weight) calcAlphaTerm(alpha, x float32) float32 {
+func (w *weight) alphaTerm(alpha, x float32) float32 {
 	return alpha * w.covariance * x
 }
 
-func (w *weight) calcBetaTerm(beta, x float32) float32 {
+func (w *weight) betaTerm(beta, x float32) float32 {
 	conf := w.covariance
 	return beta * conf * conf * x * x
 }
@@ -206,7 +206,7 @@ func (s LScores) find(l Label) int {
 	return -1
 }
 
-func (s LScores) getCorrectAndIncorrect(l Label) (correct *LScore, incorrect *LScore) {
+func (s LScores) correctAndIncorrect(l Label) (correct *LScore, incorrect *LScore) {
 	corrIx := s.find(l)
 	if corrIx >= 0 {
 		correct = &s[corrIx]
@@ -233,7 +233,7 @@ func (s lScores) Swap(i, j int) {
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
-func (s model) calcScores(v FeatureVector) LScores {
+func (s model) scores(v FeatureVector) LScores {
 	scores := make(LScores, 0, len(s))
 	for l, w := range s {
 		ls := LScore{Label: l}
@@ -245,11 +245,11 @@ func (s model) calcScores(v FeatureVector) LScores {
 	return scores
 }
 
-func calcMargin(correct *LScore, incorrect *LScore) float32 {
+func margin(correct *LScore, incorrect *LScore) float32 {
 	return incorrect.scoreOrElse(0) - correct.scoreOrElse(0)
 }
 
-func calcVariance(v FeatureVector, w1, w2 weights) float32 {
+func variance(v FeatureVector, w1, w2 weights) float32 {
 	var variance float32 = 0
 	for _, elem := range v {
 		dim := elem.Dim
