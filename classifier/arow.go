@@ -86,7 +86,7 @@ type FeatureVector []FeatureElement
 type Label string
 type weight struct {
 	weight     float32
-	confidence float32
+	covariance float32
 }
 type weights map[Dim]weight
 type model map[Label]weights
@@ -94,7 +94,7 @@ type model map[Label]weights
 func initialWeight() weight {
 	return weight{
 		weight:     0,
-		confidence: 1,
+		covariance: 1,
 	}
 }
 
@@ -123,7 +123,7 @@ func (w *weight) negativeUpdate(alpha, beta, x float32) {
 	aTerm := w.calcAlphaTerm(alpha, x)
 	bTerm := w.calcBetaTerm(beta, x)
 	w.weight -= aTerm
-	w.confidence -= bTerm
+	w.covariance -= bTerm
 	return
 }
 
@@ -131,16 +131,16 @@ func (w *weight) positiveUpdate(alpha, beta, x float32) {
 	aTerm := w.calcAlphaTerm(alpha, x)
 	bTerm := w.calcBetaTerm(beta, x)
 	w.weight += aTerm
-	w.confidence -= bTerm
+	w.covariance -= bTerm
 	return
 }
 
 func (w *weight) calcAlphaTerm(alpha, x float32) float32 {
-	return alpha * w.confidence * x
+	return alpha * w.covariance * x
 }
 
 func (w *weight) calcBetaTerm(beta, x float32) float32 {
-	conf := w.confidence
+	conf := w.covariance
 	return beta * conf * conf * x * x
 }
 
@@ -254,18 +254,18 @@ func calcVariance(v FeatureVector, w1, w2 weights) float32 {
 	for _, elem := range v {
 		dim := elem.Dim
 		val := elem.Value
-		variance += (w1.covar(dim) + w2.covar(dim)) * val * val
+		variance += (w1.covariance(dim) + w2.covariance(dim)) * val * val
 	}
 	return variance
 }
 
 // TODO: consider to rename
-func (ws weights) covar(dim Dim) float32 {
+func (ws weights) covariance(dim Dim) float32 {
 	if ws == nil {
 		return 1
 	}
 	if w, ok := ws[dim]; ok {
-		return w.confidence
+		return w.covariance
 	}
 	return 1
 }
