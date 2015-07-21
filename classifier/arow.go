@@ -3,11 +3,13 @@ package classifier
 import (
 	"errors"
 	"sort"
+	"sync"
 )
 
 type Arow struct {
 	model
 	regWeight float32
+	m         sync.Mutex
 }
 
 func NewArow(regWeight float32) (*Arow, error) {
@@ -21,6 +23,9 @@ func NewArow(regWeight float32) (*Arow, error) {
 }
 
 func (a *Arow) Train(v FeatureVector, label Label) error {
+	a.m.Lock()
+	defer a.m.Unlock()
+
 	if label == "" {
 		return errors.New("label must not be empty.")
 	}
@@ -63,12 +68,16 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 }
 
 func (a *Arow) Classify(v FeatureVector) LScores {
+	a.m.Lock()
+	defer a.m.Unlock()
 	scores := a.model.scores(v)
 	sort.Sort(lScores(scores))
 	return scores
 }
 
 func (a *Arow) Clear() {
+	a.m.Lock()
+	defer a.m.Unlock()
 	a.model = make(model)
 }
 
