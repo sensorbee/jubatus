@@ -6,7 +6,7 @@ import (
 )
 
 type Arow struct {
-	storage
+	model
 	regWeight float32
 }
 
@@ -15,7 +15,7 @@ func NewArow(regWeight float32) (*Arow, error) {
 		return nil, errors.New("regularization weight must be larger than zero.")
 	}
 	return &Arow{
-		storage:   make(storage),
+		model:     make(model),
 		regWeight: regWeight,
 	}, nil
 }
@@ -25,11 +25,11 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		return errors.New("label must not be empty.")
 	}
 
-	if _, ok := a.storage[label]; !ok {
-		a.storage[label] = make(weights)
+	if _, ok := a.model[label]; !ok {
+		a.model[label] = make(weights)
 	}
 
-	scores := a.storage.calcScores(v)
+	scores := a.model.calcScores(v)
 	corr, incorr := scores.getCorrectAndIncorrect(label)
 	margin := calcMargin(corr, incorr)
 
@@ -37,16 +37,16 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 		return nil
 	}
 
-	variance := calcVariance(v, a.storage[label], a.storage[incorr.labelOrElse("")])
+	variance := calcVariance(v, a.model[label], a.model[incorr.labelOrElse("")])
 
 	var beta float32 = 1 / (variance + 1/a.regWeight)
 	var alpha float32 = (1 + margin) * beta
 
 	var incorrWeights weights
 	if incorr != nil {
-		incorrWeights = a.storage[incorr.Label]
+		incorrWeights = a.model[incorr.Label]
 	}
-	var corrWeights weights = a.storage[label]
+	var corrWeights weights = a.model[label]
 
 	for _, elem := range v {
 		dim := elem.Dim
@@ -63,13 +63,13 @@ func (a *Arow) Train(v FeatureVector, label Label) error {
 }
 
 func (a *Arow) Classify(v FeatureVector) LScores {
-	scores := a.storage.calcScores(v)
+	scores := a.model.calcScores(v)
 	sort.Sort(lScores(scores))
 	return scores
 }
 
 func (a *Arow) Clear() {
-	a.storage = make(storage)
+	a.model = make(model)
 }
 
 func (a *Arow) RegWeight() float32 {
@@ -89,7 +89,7 @@ type weight struct {
 	confidence float32
 }
 type weights map[Dim]weight
-type storage map[Label]weights
+type model map[Label]weights
 
 func initialWeight() weight {
 	return weight{
@@ -233,7 +233,7 @@ func (s lScores) Swap(i, j int) {
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
-func (s storage) calcScores(v FeatureVector) LScores {
+func (s model) calcScores(v FeatureVector) LScores {
 	scores := make(LScores, 0, len(s))
 	for l, w := range s {
 		ls := LScore{Label: l}
