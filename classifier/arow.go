@@ -9,7 +9,8 @@ import (
 type AROW struct {
 	model
 	regWeight float32
-	m         sync.RWMutex
+	*intern
+	m sync.RWMutex
 }
 
 func NewAROW(regWeight float32) (*AROW, error) {
@@ -19,6 +20,7 @@ func NewAROW(regWeight float32) (*AROW, error) {
 	return &AROW{
 		model:     make(model),
 		regWeight: regWeight,
+		intern:    newIntern(),
 	}, nil
 }
 
@@ -34,7 +36,8 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		a.model[label] = make(weights)
 	}
 
-	scores := a.model.scores(v)
+	fvForScores, fvFull := v.toInternal(a.intern)
+	scores := a.model.scores(fvForScores)
 	corr, incorr := scores.correctAndIncorrect(label)
 	margin := margin(corr, incorr)
 
@@ -42,7 +45,7 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		return nil
 	}
 
-	variance := variance(v, a.model[label], a.model[incorr.labelOrElse("")])
+	variance := variance(fvFull, a.model[label], a.model[incorr.labelOrElse("")])
 
 	var beta float32 = 1 / (variance + 1/a.regWeight)
 	var alpha float32 = (1 + margin) * beta
@@ -53,9 +56,9 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 	}
 	var corrWeights weights = a.model[label]
 
-	for _, elem := range v {
-		dim := elem.Dim
-		value := elem.Value
+	for _, elem := range fvFull {
+		dim := elem.dim
+		value := elem.value
 
 		if incorr != nil {
 			incorrWeights.negativeUpdate(alpha, beta, dim, value)
@@ -70,7 +73,8 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 func (a *AROW) Classify(v FeatureVector) LScores {
 	a.m.RLock()
 	defer a.m.RUnlock()
-	scores := a.model.scores(v)
+	intfv := v.toInternalForScores(a.intern)
+	scores := a.model.scores(intfv)
 	sort.Sort(lScores(scores))
 	return scores
 }
@@ -85,19 +89,51 @@ func (a *AROW) RegWeight() float32 {
 	return a.regWeight
 }
 
-type Dim string
 type FeatureElement struct {
-	Dim
+	Dim   string
 	Value float32
 }
 type FeatureVector []FeatureElement
+
+func (v FeatureVector) toInternalForScores(intern *intern) fVector {
+	ret := make(fVector, 0, len(v))
+	for _, e := range v {
+		if d := intern.mayGet(e.Dim); d != 0 {
+			ret = append(ret, fElement{dim(d), e.Value})
+		}
+	}
+	return ret
+}
+
+func (v FeatureVector) toInternal(intern *intern) (forScores fVector, full fVector) {
+	full = make(fVector, len(v))
+	l, r := 0, len(v)
+	for _, e := range v {
+		if d := intern.mayGet(e.Dim); d != 0 {
+			full[l] = fElement{dim(d), e.Value}
+			l++
+		} else {
+			r--
+			full[r] = fElement{dim(intern.get(e.Dim)), e.Value}
+		}
+	}
+	forScores = full[:l]
+	return
+}
+
+type dim int
+type fElement struct {
+	dim
+	value float32
+}
+type fVector []fElement
 
 type Label string
 type weight struct {
 	weight     float32
 	covariance float32
 }
-type weights map[Dim]weight
+type weights map[dim]weight
 type model map[Label]weights
 
 func initialWeight() weight {
@@ -107,15 +143,15 @@ func initialWeight() weight {
 	}
 }
 
-func (ws weights) negativeUpdate(alpha, beta float32, dim Dim, x float32) {
+func (ws weights) negativeUpdate(alpha, beta float32, dim dim, x float32) {
 	ws.update(alpha, beta, dim, x, (*weight).negativeUpdate)
 }
 
-func (ws weights) positiveUpdate(alpha, beta float32, dim Dim, x float32) {
+func (ws weights) positiveUpdate(alpha, beta float32, dim dim, x float32) {
 	ws.update(alpha, beta, dim, x, (*weight).positiveUpdate)
 }
 
-func (ws weights) update(alpha, beta float32, dim Dim, x float32, f weightUpdateFunction) {
+func (ws weights) update(alpha, beta float32, dim dim, x float32, f weightUpdateFunction) {
 	var weight weight
 	if w, ok := ws[dim]; ok {
 		weight = w
@@ -242,12 +278,12 @@ func (s lScores) Swap(i, j int) {
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
-func (s model) scores(v FeatureVector) LScores {
+func (s model) scores(v fVector) LScores {
 	scores := make(LScores, 0, len(s))
 	for l, w := range s {
 		ls := LScore{Label: l}
 		for _, x := range v {
-			ls.Score += x.Value * w[x.Dim].weight
+			ls.Score += x.value * w[x.dim].weight
 		}
 		scores = append(scores, ls)
 	}
@@ -258,18 +294,18 @@ func margin(correct *LScore, incorrect *LScore) float32 {
 	return incorrect.scoreOrElse(0) - correct.scoreOrElse(0)
 }
 
-func variance(v FeatureVector, w1, w2 weights) float32 {
+func variance(v fVector, w1, w2 weights) float32 {
 	var variance float32 = 0
 	for _, elem := range v {
-		dim := elem.Dim
-		val := elem.Value
+		dim := elem.dim
+		val := elem.value
 		variance += (w1.covariance(dim) + w2.covariance(dim)) * val * val
 	}
 	return variance
 }
 
 // TODO: consider to rename
-func (ws weights) covariance(dim Dim) float32 {
+func (ws weights) covariance(dim dim) float32 {
 	if ws == nil {
 		return 1
 	}

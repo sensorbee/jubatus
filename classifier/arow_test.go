@@ -14,7 +14,7 @@ func unigram(s string) FeatureVector {
 	fv := FeatureVector{}
 	for _, r := range s {
 		fv = append(fv, FeatureElement{
-			Dim:   Dim(r),
+			Dim:   string(r),
 			Value: 1,
 		})
 	}
