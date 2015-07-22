@@ -83,6 +83,7 @@ func (a *AROW) Clear() {
 	a.m.Lock()
 	defer a.m.Unlock()
 	a.model = make(model)
+	a.intern = newIntern()
 }
 
 func (a *AROW) RegWeight() float32 {
