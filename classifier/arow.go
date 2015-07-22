@@ -12,7 +12,7 @@ type AROW struct {
 	m         sync.Mutex
 }
 
-func NewArow(regWeight float32) (*AROW, error) {
+func NewAROW(regWeight float32) (*AROW, error) {
 	if regWeight <= 0 {
 		return nil, errors.New("regularization weight must be larger than zero.")
 	}

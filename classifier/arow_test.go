@@ -45,7 +45,7 @@ func Example() {
 		shuffledShogunList[v] = shogunList[i]
 	}
 
-	var arow, _ = NewArow(1)
+	var arow, _ = NewAROW(1)
 	for _, s := range shuffledShogunList {
 		fv := unigram(s.given)
 		arow.Train(fv, Label(s.family))
