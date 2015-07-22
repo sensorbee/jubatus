@@ -95,8 +95,8 @@ type FeatureElement struct {
 }
 type FeatureVector []FeatureElement
 
-func (v FeatureVector) toInternalForScores(intern *intern) fVector {
-	ret := make(fVector, 0, len(v))
+func (v FeatureVector) toInternalForScores(intern *intern) fVectorForScores {
+	ret := make(fVectorForScores, 0, len(v))
 	for _, e := range v {
 		if d := intern.mayGet(e.Dim); d != 0 {
 			ret = append(ret, fElement{dim(d), e.Value})
@@ -105,8 +105,8 @@ func (v FeatureVector) toInternalForScores(intern *intern) fVector {
 	return ret
 }
 
-func (v FeatureVector) toInternal(intern *intern) (forScores fVector, full fVector) {
-	full = make(fVector, len(v))
+func (v FeatureVector) toInternal(intern *intern) (fVectorForScores, fVector) {
+	full := make(fVector, len(v))
 	l, r := 0, len(v)
 	for _, e := range v {
 		if d := intern.mayGet(e.Dim); d != 0 {
@@ -117,8 +117,7 @@ func (v FeatureVector) toInternal(intern *intern) (forScores fVector, full fVect
 			full[r] = fElement{dim(intern.get(e.Dim)), e.Value}
 		}
 	}
-	forScores = full[:l]
-	return
+	return fVectorForScores(full[:l]), full
 }
 
 type dim int
@@ -127,6 +126,7 @@ type fElement struct {
 	value float32
 }
 type fVector []fElement
+type fVectorForScores []fElement
 
 type Label string
 type weight struct {
@@ -278,7 +278,7 @@ func (s lScores) Swap(i, j int) {
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
-func (s model) scores(v fVector) LScores {
+func (s model) scores(v fVectorForScores) LScores {
 	scores := make(LScores, 0, len(s))
 	for l, w := range s {
 		ls := LScore{Label: l}
