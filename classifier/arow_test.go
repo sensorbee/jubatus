@@ -52,11 +52,11 @@ func Example() {
 	}
 
 	scores := arow.Classify(unigram("慶喜"))
-	fmt.Println(scores[0].Label)
+	fmt.Println(scores.max().Label)
 	scores = arow.Classify(unigram("義昭"))
-	fmt.Println(scores[0].Label)
+	fmt.Println(scores.max().Label)
 	scores = arow.Classify(unigram("守時"))
-	fmt.Println(scores[0].Label)
+	fmt.Println(scores.max().Label)
 
 	// Output:
 	// 徳川

@@ -2,7 +2,6 @@ package classifier
 
 import (
 	"errors"
-	"sort"
 	"sync"
 )
 
@@ -76,7 +75,6 @@ func (a *AROW) Classify(v FeatureVector) LScores {
 	defer a.m.RUnlock()
 	intfv := v.toInternalForScores(a.intern)
 	scores := a.model.scores(intfv)
-	sort.Sort(lScores(scores))
 	return scores
 }
 
@@ -263,20 +261,6 @@ func (s LScores) correctAndIncorrect(l Label) (correct *LScore, incorrect *LScor
 	}
 
 	return
-}
-
-type lScores LScores
-
-func (s lScores) Len() int {
-	return len(s)
-}
-
-func (s lScores) Less(i, j int) bool {
-	return s[i].Score > s[j].Score
-}
-
-func (s lScores) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
