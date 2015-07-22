@@ -9,7 +9,7 @@ import (
 type AROW struct {
 	model
 	regWeight float32
-	m         sync.Mutex
+	m         sync.RWMutex
 }
 
 func NewAROW(regWeight float32) (*AROW, error) {
@@ -68,8 +68,8 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 }
 
 func (a *AROW) Classify(v FeatureVector) LScores {
-	a.m.Lock()
-	defer a.m.Unlock()
+	a.m.RLock()
+	defer a.m.RUnlock()
 	scores := a.model.scores(v)
 	sort.Sort(lScores(scores))
 	return scores
