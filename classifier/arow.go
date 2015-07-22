@@ -8,9 +8,10 @@ import (
 
 type AROW struct {
 	model
-	regWeight float32
 	*intern
 	m sync.RWMutex
+
+	regWeight float32
 }
 
 func NewAROW(regWeight float32) (*AROW, error) {
