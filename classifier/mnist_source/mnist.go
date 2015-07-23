@@ -13,10 +13,12 @@ import (
 )
 
 type mnistSource struct {
-	r *bufio.Reader
+	file *os.File
+	r    *bufio.Reader
 }
 
 func (m *mnistSource) GenerateStream(ctx *core.Context, w core.Writer) error {
+	defer m.file.Close()
 	for {
 		l, _, err := m.r.ReadLine()
 		if err != nil {
@@ -63,19 +65,20 @@ func (*mnistSource) Stop(*core.Context) error {
 }
 
 func createTrainingSource(*core.Context, *bql.IOParams, data.Map) (core.Source, error) {
-	r, err := newReader("mnist")
-	if err != nil {
-		return nil, err
-	}
-	return &mnistSource{r}, nil
+	return new("mnist")
 }
 
 func createTestSource(*core.Context, *bql.IOParams, data.Map) (core.Source, error) {
-	r, err := newReader("mnist.t")
+	return new("mnist.t")
+}
+
+func new(path string) (*mnistSource, error) {
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	return &mnistSource{r}, nil
+	r := bufio.NewReaderSize(f, 10000)
+	return &mnistSource{f, r}, nil
 }
 
 func newReader(path string) (*bufio.Reader, error) {
