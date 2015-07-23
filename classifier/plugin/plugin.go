@@ -53,6 +53,33 @@ func (*arowState) Terminate(ctx *core.Context) error {
 	return nil
 }
 
+func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
+	vlabel, ok := t.Data["label"]
+	if !ok {
+		return errors.New("label field is missing")
+	}
+	label, err := data.ToString(vlabel)
+	if err != nil {
+		return fmt.Errorf("label value cannot be converted to a string: %v", err)
+	}
+
+	vfv, ok := t.Data["feature_vector"]
+	if !ok {
+		return errors.New("feature_vector field is missing")
+	}
+	mfv, err := data.AsMap(vfv)
+	if err != nil {
+		return fmt.Errorf("feature_vector value is not a map: %v", err)
+	}
+	fv, err := mapToFeatureVector(mfv)
+	if err != nil {
+		return err
+	}
+
+	err = a.AROW.Train(fv, classifier.Label(label))
+	return err
+}
+
 func AROWTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
 	s, err := lookupAROWState(ctx, stateName)
 	if err != nil {
