@@ -10,13 +10,13 @@ import (
 )
 
 func init() {
-	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(NewState)); err != nil {
+	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newState)); err != nil {
 		panic(err)
 	}
-	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_train", udf.MustConvertGeneric(AROWTrain)); err != nil {
+	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_train", udf.MustConvertGeneric(arowTrain)); err != nil {
 		panic(err)
 	}
-	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_classify", udf.MustConvertGeneric(AROWClassify)); err != nil {
+	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_classify", udf.MustConvertGeneric(arowClassify)); err != nil {
 		panic(err)
 	}
 }
@@ -25,7 +25,7 @@ type arowState struct {
 	*classifier.AROW
 }
 
-func NewState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+func newState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	v, ok := params["regularization_weight"]
 	if !ok {
 		return nil, errors.New("regularization_weight parameter is missing")
@@ -80,7 +80,7 @@ func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
 	return err
 }
 
-func AROWTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
+func arowTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
 	s, err := lookupAROWState(ctx, stateName)
 	if err != nil {
 		return "", err
@@ -95,7 +95,7 @@ func AROWTrain(ctx *core.Context, stateName string, featureVector data.Map, labe
 	return label, err
 }
 
-func AROWClassify(ctx *core.Context, stateName string, featureVector data.Map) (data.Map, error) {
+func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (data.Map, error) {
 	s, err := lookupAROWState(ctx, stateName)
 	if err != nil {
 		return nil, err
