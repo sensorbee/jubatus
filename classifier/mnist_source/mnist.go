@@ -2,7 +2,6 @@ package mnist_source
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"os"
 	"pfi/sensorbee/sensorbee/bql"
@@ -86,13 +85,6 @@ func newReader(path string) (*bufio.Reader, error) {
 		return nil, err
 	}
 	return bufio.NewReaderSize(f, 10000), nil
-}
-
-type writer struct{}
-
-func (writer) Write(ctx *core.Context, t *core.Tuple) error {
-	_, err := fmt.Println(t)
-	return err
 }
 
 func init() {
