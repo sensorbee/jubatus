@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newState)); err != nil {
+	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newAROWState)); err != nil {
 		panic(err)
 	}
 	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_train", udf.MustConvertGeneric(arowTrain)); err != nil {
@@ -25,7 +25,7 @@ type arowState struct {
 	*classifier.AROW
 }
 
-func newState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	v, ok := params["regularization_weight"]
 	if !ok {
 		return nil, errors.New("regularization_weight parameter is missing")
