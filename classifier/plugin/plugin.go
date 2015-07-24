@@ -67,17 +67,17 @@ func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
 	if !ok {
 		return errors.New("feature_vector field is missing")
 	}
-	mfv, err := data.AsMap(vfv)
+	fv, err := data.AsMap(vfv)
 	if err != nil {
 		return fmt.Errorf("feature_vector value is not a map: %v", err)
 	}
-	fv, err := mapToFeatureVector(mfv)
-	if err != nil {
-		return err
-	}
 
-	err = a.AROW.Train(fv, classifier.Label(label))
+	err = a.train(fv, label)
 	return err
+}
+
+func (a *arowState) train(fv data.Map, l string) error {
+	return a.AROW.Train(classifier.FeatureVector(fv), classifier.Label(l))
 }
 
 func arowTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
@@ -86,13 +86,11 @@ func arowTrain(ctx *core.Context, stateName string, featureVector data.Map, labe
 		return "", err
 	}
 
-	fv, err := mapToFeatureVector(featureVector)
+	err = s.train(featureVector, label)
 	if err != nil {
 		return "", err
 	}
-
-	err = s.AROW.Train(fv, classifier.Label(label))
-	return label, err
+	return label, nil
 }
 
 func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (data.Map, error) {
@@ -101,12 +99,11 @@ func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (
 		return nil, err
 	}
 
-	fv, err := mapToFeatureVector(featureVector)
+	scores, err := s.AROW.Classify(classifier.FeatureVector(featureVector))
 	if err != nil {
 		return nil, err
 	}
 
-	scores := s.AROW.Classify(fv)
 	ret := make(data.Map)
 	for i, _ := range scores {
 		lscore := &scores[i]
@@ -125,24 +122,4 @@ func lookupAROWState(ctx *core.Context, stateName string) (*arowState, error) {
 		return s, nil
 	}
 	return nil, fmt.Errorf("state '%v' cannot be converted to arowState", stateName)
-}
-
-func mapToFeatureVector(m data.Map) (classifier.FeatureVector, error) {
-	fv := make(classifier.FeatureVector, 0, len(m))
-	for k, v := range m {
-		x, err := valueToFloat32(v)
-		if err != nil {
-			return nil, err
-		}
-		fv = append(fv, classifier.FeatureElement{k, x})
-	}
-	return fv, nil
-}
-
-func valueToFloat32(v data.Value) (float32, error) {
-	f64, err := data.ToFloat(v)
-	if err != nil {
-		return 0, err
-	}
-	return float32(f64), nil
 }

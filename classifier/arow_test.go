@@ -3,6 +3,7 @@ package classifier
 import (
 	"fmt"
 	"math/rand"
+	"pfi/sensorbee/sensorbee/data"
 )
 
 type shogun struct {
@@ -11,12 +12,9 @@ type shogun struct {
 }
 
 func unigram(s string) FeatureVector {
-	fv := FeatureVector{}
+	fv := make(FeatureVector)
 	for _, r := range s {
-		fv = append(fv, FeatureElement{
-			Dim:   string(r),
-			Value: 1,
-		})
+		fv[string(r)] = data.Float(1)
 	}
 	return fv
 }
@@ -51,11 +49,11 @@ func Example() {
 		arow.Train(fv, Label(s.family))
 	}
 
-	scores := arow.Classify(unigram("慶喜"))
+	scores, _ := arow.Classify(unigram("慶喜"))
 	fmt.Println(scores.max().Label)
-	scores = arow.Classify(unigram("義昭"))
+	scores, _ = arow.Classify(unigram("義昭"))
 	fmt.Println(scores.max().Label)
-	scores = arow.Classify(unigram("守時"))
+	scores, _ = arow.Classify(unigram("守時"))
 	fmt.Println(scores.max().Label)
 
 	// Output:

@@ -2,6 +2,7 @@ package classifier
 
 import (
 	"errors"
+	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
 
@@ -36,7 +37,10 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		a.model[label] = make(weights)
 	}
 
-	fvForScores, fvFull := v.toInternal(a.intern)
+	fvForScores, fvFull, err := v.toInternal(a.intern)
+	if err != nil {
+		return err
+	}
 	scores := a.model.scores(fvForScores)
 	corr, incorr := scores.correctAndIncorrect(label)
 	margin := margin(corr, incorr)
@@ -70,12 +74,15 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 	return nil
 }
 
-func (a *AROW) Classify(v FeatureVector) LScores {
+func (a *AROW) Classify(v FeatureVector) (LScores, error) {
 	a.m.RLock()
 	defer a.m.RUnlock()
-	intfv := v.toInternalForScores(a.intern)
+	intfv, err := v.toInternalForScores(a.intern)
+	if err != nil {
+		return nil, err
+	}
 	scores := a.model.scores(intfv)
-	return scores
+	return scores, nil
 }
 
 func (a *AROW) Clear() {
@@ -89,35 +96,41 @@ func (a *AROW) RegWeight() float32 {
 	return a.regWeight
 }
 
-type FeatureElement struct {
-	Dim   string
-	Value float32
-}
-type FeatureVector []FeatureElement
+type FeatureVector data.Map
 
-func (v FeatureVector) toInternalForScores(intern *intern) fVectorForScores {
+func (v FeatureVector) toInternalForScores(intern *intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
-	for _, e := range v {
-		if d := intern.mayGet(e.Dim); d != 0 {
-			ret = append(ret, fElement{dim(d), e.Value})
+	for f, val := range v {
+		xx, err := data.ToFloat(val)
+		if err != nil {
+			return nil, err
+		}
+		x := float32(xx)
+		if d := intern.mayGet(f); d != 0 {
+			ret = append(ret, fElement{dim(d), x})
 		}
 	}
-	return ret
+	return ret, nil
 }
 
-func (v FeatureVector) toInternal(intern *intern) (fVectorForScores, fVector) {
+func (v FeatureVector) toInternal(intern *intern) (fVectorForScores, fVector, error) {
 	full := make(fVector, len(v))
 	l, r := 0, len(v)
-	for _, e := range v {
-		if d := intern.mayGet(e.Dim); d != 0 {
-			full[l] = fElement{dim(d), e.Value}
+	for f, val := range v {
+		xx, err := data.ToFloat(val)
+		if err != nil {
+			return nil, nil, err
+		}
+		x := float32(xx)
+		if d := intern.mayGet(f); d != 0 {
+			full[l] = fElement{dim(d), x}
 			l++
 		} else {
 			r--
-			full[r] = fElement{dim(intern.get(e.Dim)), e.Value}
+			full[r] = fElement{dim(intern.get(f)), x}
 		}
 	}
-	return fVectorForScores(full[:l]), full
+	return fVectorForScores(full[:l]), full, nil
 }
 
 type dim int
