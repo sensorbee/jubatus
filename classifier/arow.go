@@ -2,6 +2,7 @@ package classifier
 
 import (
 	"errors"
+	"pfi/sensorbee/jubatus/common/intern"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
@@ -9,8 +10,8 @@ import (
 // AROW holds a model for classification.
 type AROW struct {
 	model
-	*intern
-	m sync.RWMutex
+	intern *intern.Intern
+	m      sync.RWMutex
 
 	regWeight float32
 }
@@ -24,7 +25,7 @@ func NewAROW(regWeight float32) (*AROW, error) {
 	return &AROW{
 		model:     make(model),
 		regWeight: regWeight,
-		intern:    newIntern(),
+		intern:    intern.New(),
 	}, nil
 }
 
@@ -96,7 +97,7 @@ func (a *AROW) Clear() {
 	a.m.Lock()
 	defer a.m.Unlock()
 	a.model = make(model)
-	a.intern = newIntern()
+	a.intern = intern.New()
 }
 
 // RegWeight returns regularization weight.
@@ -107,7 +108,7 @@ func (a *AROW) RegWeight() float32 {
 // FeatureVector is a type for feature vectors.
 type FeatureVector data.Map
 
-func (v FeatureVector) toInternalForScores(intern *intern) (fVectorForScores, error) {
+func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
 	for f, val := range v {
 		xx, err := data.ToFloat(val)
@@ -115,14 +116,14 @@ func (v FeatureVector) toInternalForScores(intern *intern) (fVectorForScores, er
 			return nil, err
 		}
 		x := float32(xx)
-		if d := intern.mayGet(f); d != 0 {
+		if d := intern.MayGet(f); d != 0 {
 			ret = append(ret, fElement{dim(d), x})
 		}
 	}
 	return ret, nil
 }
 
-func (v FeatureVector) toInternal(intern *intern) (fVectorForScores, fVector, error) {
+func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
 	full := make(fVector, len(v))
 	l, r := 0, len(v)
 	for f, val := range v {
@@ -131,12 +132,12 @@ func (v FeatureVector) toInternal(intern *intern) (fVectorForScores, fVector, er
 			return nil, nil, err
 		}
 		x := float32(xx)
-		if d := intern.mayGet(f); d != 0 {
+		if d := intern.MayGet(f); d != 0 {
 			full[l] = fElement{dim(d), x}
 			l++
 		} else {
 			r--
-			full[r] = fElement{dim(intern.get(f)), x}
+			full[r] = fElement{dim(intern.Get(f)), x}
 		}
 	}
 	return fVectorForScores(full[:l]), full, nil
