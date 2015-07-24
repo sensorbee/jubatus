@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// AROW holds a model for classification.
 type AROW struct {
 	model
 	*intern
@@ -14,6 +15,8 @@ type AROW struct {
 	regWeight float32
 }
 
+// NewAROW creates an AROW model. regWeight means sensitivity for data. When regWeight is large,
+// the model learns quickly but harms from noise. regWeight must be larger than zero.
 func NewAROW(regWeight float32) (*AROW, error) {
 	if regWeight <= 0 {
 		return nil, errors.New("regularization weight must be larger than zero.")
@@ -25,6 +28,7 @@ func NewAROW(regWeight float32) (*AROW, error) {
 	}, nil
 }
 
+// Train trains a model with a feature vector and a label.
 func (a *AROW) Train(v FeatureVector, label Label) error {
 	if label == "" {
 		return errors.New("label must not be empty.")
@@ -74,6 +78,8 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 	return nil
 }
 
+// Classify classifies a feature vector. This function returns
+// all labels and scores.
 func (a *AROW) Classify(v FeatureVector) (LScores, error) {
 	a.m.RLock()
 	defer a.m.RUnlock()
@@ -85,6 +91,7 @@ func (a *AROW) Classify(v FeatureVector) (LScores, error) {
 	return scores, nil
 }
 
+// Clear clears a model.
 func (a *AROW) Clear() {
 	a.m.Lock()
 	defer a.m.Unlock()
@@ -92,10 +99,12 @@ func (a *AROW) Clear() {
 	a.intern = newIntern()
 }
 
+// RegWeight returns regularization weight.
 func (a *AROW) RegWeight() float32 {
 	return a.regWeight
 }
 
+// FeatureVector is a type for feature vectors.
 type FeatureVector data.Map
 
 func (v FeatureVector) toInternalForScores(intern *intern) (fVectorForScores, error) {
@@ -141,6 +150,7 @@ type fElement struct {
 type fVector []fElement
 type fVectorForScores []fElement
 
+// Label represents labels for classification.
 type Label string
 type weight struct {
 	weight     float32
@@ -202,6 +212,7 @@ func (w *weight) betaTerm(beta, x float32) float32 {
 	return beta * conf * conf * x * x
 }
 
+// LScore is a pair of a label and a score.
 type LScore struct {
 	Label Label
 	Score float32
@@ -221,6 +232,7 @@ func (ls *LScore) scoreOrElse(defaultS float32) float32 {
 	return ls.Score
 }
 
+// LScores is pairs of a label and a score.
 type LScores []LScore
 
 func (s LScores) max() *LScore {
