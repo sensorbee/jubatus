@@ -25,12 +25,12 @@ func NewAROW(regWeight float32) (*AROW, error) {
 }
 
 func (a *AROW) Train(v FeatureVector, label Label) error {
-	a.m.Lock()
-	defer a.m.Unlock()
-
 	if label == "" {
 		return errors.New("label must not be empty.")
 	}
+
+	a.m.Lock()
+	defer a.m.Unlock()
 
 	if _, ok := a.model[label]; !ok {
 		a.model[label] = make(weights)
