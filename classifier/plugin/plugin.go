@@ -19,10 +19,21 @@ func init() {
 }
 
 type arowState struct {
-	arow *classifier.AROW
+	arow               *classifier.AROW
+	labelField         string
+	featureVectorField string
 }
 
 func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+	label, err := extractParamAsStringWithDefault(params, "label_field", "label")
+	if err != nil {
+		return nil, err
+	}
+	fv, err := extractParamAsStringWithDefault(params, "feature_vector_field", "feature_vector")
+	if err != nil {
+		return nil, err
+	}
+
 	v, ok := params["regularization_weight"]
 	if !ok {
 		return nil, errors.New("regularization_weight parameter is missing")
@@ -42,7 +53,9 @@ func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) 
 	}
 
 	return &arowState{
-		arow: a,
+		arow:               a,
+		labelField:         label,
+		featureVectorField: fv,
 	}, nil
 }
 
@@ -51,22 +64,22 @@ func (*arowState) Terminate(ctx *core.Context) error {
 }
 
 func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
-	vlabel, ok := t.Data["label"]
+	vlabel, ok := t.Data[a.labelField]
 	if !ok {
-		return errors.New("label field is missing")
+		return fmt.Errorf("%s field is missing", a.labelField)
 	}
 	label, err := data.AsString(vlabel)
 	if err != nil {
-		return fmt.Errorf("label value is not a string: %v", err)
+		return fmt.Errorf("%s value is not a string: %v", a.labelField, err)
 	}
 
-	vfv, ok := t.Data["feature_vector"]
+	vfv, ok := t.Data[a.featureVectorField]
 	if !ok {
-		return errors.New("feature_vector field is missing")
+		return fmt.Errorf("%s field is missing", a.featureVectorField)
 	}
 	fv, err := data.AsMap(vfv)
 	if err != nil {
-		return fmt.Errorf("feature_vector value is not a map: %v", err)
+		return fmt.Errorf("%s value is not a map: %v", a.labelField, err)
 	}
 
 	err = a.train(fv, label)
@@ -97,4 +110,17 @@ func lookupAROWState(ctx *core.Context, stateName string) (*arowState, error) {
 		return s, nil
 	}
 	return nil, fmt.Errorf("state '%v' cannot be converted to arowState", stateName)
+}
+
+func extractParamAsStringWithDefault(params data.Map, key, def string) (string, error) {
+	v, ok := params[key]
+	if !ok {
+		return def, nil
+	}
+
+	s, err := data.AsString(v)
+	if err != nil {
+		return "", fmt.Errorf("%s parameter is not a string: %v", key, err)
+	}
+	return s, nil
 }
