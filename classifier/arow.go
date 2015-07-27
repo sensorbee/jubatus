@@ -2,6 +2,7 @@ package classifier
 
 import (
 	"errors"
+	"math"
 	"pfi/sensorbee/jubatus/common/intern"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
@@ -47,21 +48,21 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		return err
 	}
 	scores := a.model.scores(fvForScores)
-	corr, incorr := scores.correctAndIncorrect(label)
-	margin := margin(corr, incorr)
+	incorr := scores.maxExcept(label)
+	margin := scores.margin(label, incorr)
 
 	if margin <= -1 {
 		return nil
 	}
 
-	variance := variance(fvFull, a.model[label], a.model[incorr.labelOrElse("")])
+	variance := variance(fvFull, a.model[label], a.model[incorr])
 
 	var beta float32 = 1 / (variance + 1/a.regWeight)
 	var alpha float32 = (1 + margin) * beta
 
 	var incorrWeights weights
-	if incorr != nil {
-		incorrWeights = a.model[incorr.Label]
+	if incorr != "" {
+		incorrWeights = a.model[incorr]
 	}
 	var corrWeights weights = a.model[label]
 
@@ -69,7 +70,7 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		dim := elem.dim
 		value := elem.value
 
-		if incorr != nil {
+		if incorr != "" {
 			incorrWeights.negativeUpdate(alpha, beta, dim, value)
 		}
 
@@ -213,97 +214,51 @@ func (w *weight) betaTerm(beta, x float32) float32 {
 	return beta * conf * conf * x * x
 }
 
-// LScore is a pair of a label and a score.
-type LScore struct {
-	Label Label
-	Score float32
+// LScores is a type representing a map from labels to scores.
+type LScores data.Map
+
+func (s LScores) score(l Label) float32 {
+	vsc, ok := s[string(l)]
+	if !ok {
+		return 0
+	}
+	sc, _ := data.AsFloat(vsc)
+	return float32(sc)
 }
 
-func (ls *LScore) labelOrElse(defaultL Label) Label {
-	if ls == nil {
-		return defaultL
-	}
-	return ls.Label
+func (s LScores) max() Label {
+	return s.maxExcept("")
 }
 
-func (ls *LScore) scoreOrElse(defaultS float32) float32 {
-	if ls == nil {
-		return defaultS
-	}
-	return ls.Score
-}
-
-// LScores is pairs of a label and a score.
-type LScores []LScore
-
-func (s LScores) max() *LScore {
-	if len(s) == 0 {
-		return nil
-	}
-	ret := &s[0]
-	for i := 1; i < len(s); i++ {
-		if s[i].Score > ret.Score {
-			ret = &s[i]
+func (s LScores) maxExcept(except Label) Label {
+	maxSc := float32(math.Inf(-1))
+	var ret Label
+	for l, _ := range s {
+		la := Label(l)
+		sc := s.score(la)
+		if sc > maxSc && la != except {
+			maxSc = sc
+			ret = la
 		}
 	}
 	return ret
 }
 
-func (s LScores) maxExcept(exceptIx int) *LScore {
-	if exceptIx < 0 || exceptIx >= len(s) {
-		return s.max()
-	}
-
-	l := s[:exceptIx].max()
-	r := s[exceptIx+1:].max()
-	if l == nil {
-		return r
-	}
-	if r == nil {
-		return l
-	}
-	if l.Score < r.Score {
-		return r
-	}
-	return l
-}
-
-func (s LScores) find(l Label) int {
-	for i, ls := range s {
-		if ls.Label == l {
-			return i
-		}
-	}
-	return -1
-}
-
-func (s LScores) correctAndIncorrect(l Label) (correct *LScore, incorrect *LScore) {
-	corrIx := s.find(l)
-	if corrIx >= 0 {
-		correct = &s[corrIx]
-		incorrect = s.maxExcept(corrIx)
-	} else {
-		incorrect = s.max()
-	}
-
-	return
+func (s LScores) margin(correct Label, incorrect Label) float32 {
+	return s.score(incorrect) - s.score(correct)
 }
 
 // jubatus::core::classifier::linear_classifier::classify_with_scores
 func (s model) scores(v fVectorForScores) LScores {
-	scores := make(LScores, 0, len(s))
+	scores := make(LScores)
 	for l, w := range s {
-		ls := LScore{Label: l}
+		var score float32
 		for _, x := range v {
-			ls.Score += x.value * w[x.dim].weight
+			score += x.value * w[x.dim].weight
 		}
-		scores = append(scores, ls)
+		scores[string(l)] = data.Float(score)
 	}
 	return scores
-}
-
-func margin(correct *LScore, incorrect *LScore) float32 {
-	return incorrect.scoreOrElse(0) - correct.scoreOrElse(0)
 }
 
 func variance(v fVector, w1, w2 weights) float32 {

@@ -100,16 +100,7 @@ func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (
 	}
 
 	scores, err := s.AROW.Classify(classifier.FeatureVector(featureVector))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make(data.Map)
-	for i, _ := range scores {
-		lscore := &scores[i]
-		ret[string(lscore.Label)] = data.Float(lscore.Score)
-	}
-	return ret, nil
+	return data.Map(scores), err
 }
 
 func lookupAROWState(ctx *core.Context, stateName string) (*arowState, error) {
