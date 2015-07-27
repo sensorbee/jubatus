@@ -9,7 +9,7 @@ import (
 
 // AROW holds a model for classification.
 type AROW struct {
-	model
+	model  model
 	intern *intern.Intern
 	m      sync.RWMutex
 
@@ -145,7 +145,7 @@ func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVec
 
 type dim int
 type fElement struct {
-	dim
+	dim   dim
 	value float32
 }
 type fVector []fElement

@@ -22,7 +22,7 @@ func init() {
 }
 
 type arowState struct {
-	*classifier.AROW
+	arow *classifier.AROW
 }
 
 func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) {
@@ -45,7 +45,7 @@ func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) 
 	}
 
 	return &arowState{
-		AROW: a,
+		arow: a,
 	}, nil
 }
 
@@ -77,7 +77,7 @@ func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
 }
 
 func (a *arowState) train(fv data.Map, l string) error {
-	return a.AROW.Train(classifier.FeatureVector(fv), classifier.Label(l))
+	return a.arow.Train(classifier.FeatureVector(fv), classifier.Label(l))
 }
 
 func arowTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
@@ -99,7 +99,7 @@ func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (
 		return nil, err
 	}
 
-	scores, err := s.AROW.Classify(classifier.FeatureVector(featureVector))
+	scores, err := s.arow.Classify(classifier.FeatureVector(featureVector))
 	if err != nil {
 		return nil, err
 	}
