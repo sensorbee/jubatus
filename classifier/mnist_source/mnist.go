@@ -81,15 +81,6 @@ func new(path string) (*mnistSource, error) {
 	return &mnistSource{f, r}, nil
 }
 
-func newReader(path string) (*bufio.Reader, error) {
-	// does not close because this code is for test and will be removed soon.
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	return bufio.NewReaderSize(f, 10000), nil
-}
-
 func init() {
 	bql.MustRegisterGlobalSourceCreator("mnist_training", bql.SourceCreatorFunc(createTrainingSource))
 	bql.MustRegisterGlobalSourceCreator("mnist_test", bql.SourceCreatorFunc(createTestSource))
