@@ -226,6 +226,7 @@ func (s LScores) score(l Label) float32 {
 	return float32(sc)
 }
 
+// Max returns a label whose score is larger than others.
 func (s LScores) Max() Label {
 	return s.maxExcept("")
 }
