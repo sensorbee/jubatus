@@ -21,7 +21,7 @@ type AROW struct {
 // the model learns quickly but harms from noise. regWeight must be larger than zero.
 func NewAROW(regWeight float32) (*AROW, error) {
 	if regWeight <= 0 {
-		return nil, errors.New("regularization weight must be larger than zero.")
+		return nil, errors.New("regularization weight must be larger than zero")
 	}
 	return &AROW{
 		model:     make(model),
@@ -33,7 +33,7 @@ func NewAROW(regWeight float32) (*AROW, error) {
 // Train trains a model with a feature vector and a label.
 func (a *AROW) Train(v FeatureVector, label Label) error {
 	if label == "" {
-		return errors.New("label must not be empty.")
+		return errors.New("label must not be empty")
 	}
 
 	a.m.Lock()
@@ -57,14 +57,14 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 
 	variance := variance(fvFull, a.model[label], a.model[incorr])
 
-	var beta float32 = 1 / (variance + 1/a.regWeight)
-	var alpha float32 = (1 + margin) * beta
+	beta := 1 / (variance + 1/a.regWeight)
+	alpha := (1 + margin) * beta
 
 	var incorrWeights weights
 	if incorr != "" {
 		incorrWeights = a.model[incorr]
 	}
-	var corrWeights weights = a.model[label]
+	corrWeights := a.model[label]
 
 	for _, elem := range fvFull {
 		dim := elem.dim
@@ -226,6 +226,7 @@ func (s LScores) score(l Label) float32 {
 	return float32(sc)
 }
 
+// Max returns a label whose score is larger than others.
 func (s LScores) Max() Label {
 	return s.maxExcept("")
 }
@@ -233,7 +234,7 @@ func (s LScores) Max() Label {
 func (s LScores) maxExcept(except Label) Label {
 	maxSc := float32(math.Inf(-1))
 	var ret Label
-	for l, _ := range s {
+	for l := range s {
 		la := Label(l)
 		sc := s.score(la)
 		if sc > maxSc && la != except {
@@ -262,7 +263,7 @@ func (s model) scores(v fVectorForScores) LScores {
 }
 
 func variance(v fVector, w1, w2 weights) float32 {
-	var variance float32 = 0
+	var variance float32
 	for _, elem := range v {
 		dim := elem.dim
 		val := elem.value
