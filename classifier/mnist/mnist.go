@@ -14,12 +14,12 @@ import (
 	"time"
 )
 
-type mnistSource struct {
+type source struct {
 	file *os.File
 	r    *bufio.Reader
 }
 
-func (m *mnistSource) GenerateStream(ctx *core.Context, w core.Writer) error {
+func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 	defer m.file.Close()
 	for {
 		l, _, err := m.r.ReadLine()
@@ -62,7 +62,7 @@ func (m *mnistSource) GenerateStream(ctx *core.Context, w core.Writer) error {
 	return nil
 }
 
-func (*mnistSource) Stop(*core.Context) error {
+func (*source) Stop(*core.Context) error {
 	return nil
 }
 
@@ -78,13 +78,13 @@ func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (c
 	return new(path)
 }
 
-func new(path string) (*mnistSource, error) {
+func new(path string) (*source, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	r := bufio.NewReaderSize(f, 10000)
-	return &mnistSource{f, r}, nil
+	return &source{f, r}, nil
 }
 
 func init() {
