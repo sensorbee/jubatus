@@ -16,13 +16,13 @@ import (
 
 type source struct {
 	file *os.File
-	r    *bufio.Reader
 }
 
 func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
-	defer m.file.Close()
+	m.file.Seek(0, 0)
+	r := bufio.NewReaderSize(m.file, 10000)
 	for {
-		l, _, err := m.r.ReadLine()
+		l, _, err := r.ReadLine()
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -50,7 +50,7 @@ func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			fv[pair[0]] = data.Float(v) / 255
 		}
 		now := time.Now()
-		w.Write(ctx, &core.Tuple{
+		err = w.Write(ctx, &core.Tuple{
 			Data: data.Map{
 				"label":          data.String(label),
 				"feature_vector": fv,
@@ -58,12 +58,15 @@ func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			Timestamp:     now,
 			ProcTimestamp: now,
 		})
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (*source) Stop(*core.Context) error {
-	return nil
+func (s *source) Stop(*core.Context) error {
+	return s.file.Close()
 }
 
 func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Source, error) {
@@ -75,7 +78,11 @@ func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (c
 	if err != nil {
 		return nil, fmt.Errorf("path parameter is not a string: %v", err)
 	}
-	return new(path)
+	source, err := new(path)
+	if err != nil {
+		return nil, err
+	}
+	return core.NewRewindableSource(source), nil
 }
 
 func new(path string) (*source, error) {
@@ -83,8 +90,7 @@ func new(path string) (*source, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := bufio.NewReaderSize(f, 10000)
-	return &source{f, r}, nil
+	return &source{f}, nil
 }
 
 func init() {
