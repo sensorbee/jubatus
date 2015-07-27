@@ -13,9 +13,6 @@ func init() {
 	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newAROWState)); err != nil {
 		panic(err)
 	}
-	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_train", udf.MustConvertGeneric(arowTrain)); err != nil {
-		panic(err)
-	}
 	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_classify", udf.MustConvertGeneric(arowClassify)); err != nil {
 		panic(err)
 	}
@@ -78,19 +75,6 @@ func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
 
 func (a *arowState) train(fv data.Map, l string) error {
 	return a.arow.Train(classifier.FeatureVector(fv), classifier.Label(l))
-}
-
-func arowTrain(ctx *core.Context, stateName string, featureVector data.Map, label string) (string, error) {
-	s, err := lookupAROWState(ctx, stateName)
-	if err != nil {
-		return "", err
-	}
-
-	err = s.train(featureVector, label)
-	if err != nil {
-		return "", err
-	}
-	return label, nil
 }
 
 func arowClassify(ctx *core.Context, stateName string, featureVector data.Map) (data.Map, error) {
