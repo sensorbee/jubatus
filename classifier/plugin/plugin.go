@@ -55,9 +55,9 @@ func (a *arowState) Write(ctx *core.Context, t *core.Tuple) error {
 	if !ok {
 		return errors.New("label field is missing")
 	}
-	label, err := data.ToString(vlabel)
+	label, err := data.AsString(vlabel)
 	if err != nil {
-		return fmt.Errorf("label value cannot be converted to a string: %v", err)
+		return fmt.Errorf("label value is not a string: %v", err)
 	}
 
 	vfv, ok := t.Data["feature_vector"]
