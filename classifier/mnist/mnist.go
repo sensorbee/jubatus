@@ -44,7 +44,6 @@ func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			}
 			v, err := strconv.Atoi(pair[1])
 			if err != nil {
-				panic(err)
 				continue
 			}
 			fv[pair[0]] = data.Float(v) / 255
