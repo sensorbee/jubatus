@@ -226,7 +226,7 @@ func (s LScores) score(l Label) float32 {
 	return float32(sc)
 }
 
-func (s LScores) max() Label {
+func (s LScores) Max() Label {
 	return s.maxExcept("")
 }
 
