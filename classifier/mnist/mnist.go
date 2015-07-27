@@ -30,7 +30,7 @@ func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			return err
 		}
 		line := string(l)
-		line = strings.Trim(line, "\n ")
+		line = strings.TrimSpace(line)
 		fields := strings.Split(line, " ")
 		if len(fields) <= 1 {
 			continue
