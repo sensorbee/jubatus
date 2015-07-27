@@ -2,6 +2,8 @@ package mnist_source
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"pfi/sensorbee/sensorbee/bql"
@@ -64,12 +66,16 @@ func (*mnistSource) Stop(*core.Context) error {
 	return nil
 }
 
-func createTrainingSource(*core.Context, *bql.IOParams, data.Map) (core.Source, error) {
-	return new("mnist")
-}
-
-func createTestSource(*core.Context, *bql.IOParams, data.Map) (core.Source, error) {
-	return new("mnist.t")
+func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Source, error) {
+	v, ok := params["path"]
+	if !ok {
+		return nil, errors.New("path parameter is missing")
+	}
+	path, err := data.AsString(v)
+	if err != nil {
+		return nil, fmt.Errorf("path parameter is not a string: %v", err)
+	}
+	return new(path)
 }
 
 func new(path string) (*mnistSource, error) {
@@ -82,6 +88,5 @@ func new(path string) (*mnistSource, error) {
 }
 
 func init() {
-	bql.MustRegisterGlobalSourceCreator("mnist_training", bql.SourceCreatorFunc(createTrainingSource))
-	bql.MustRegisterGlobalSourceCreator("mnist_test", bql.SourceCreatorFunc(createTestSource))
+	bql.MustRegisterGlobalSourceCreator("mnist_source", bql.SourceCreatorFunc(createSource))
 }
