@@ -1,4 +1,4 @@
-package mnist_source
+package mnist
 
 import (
 	"bufio"
