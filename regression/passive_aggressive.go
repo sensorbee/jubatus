@@ -94,7 +94,7 @@ func (pa *PassiveAggressive) Sensitivity() float32 {
 
 func (pa *PassiveAggressive) estimate(v fVector) float32 {
 	var ret float32
-	for i, _ := range v {
+	for i := range v {
 		dim := v[i].dim
 		x := v[i].value
 
@@ -104,7 +104,7 @@ func (pa *PassiveAggressive) estimate(v fVector) float32 {
 }
 
 func (pa *PassiveAggressive) update(v fVector, coeff float32) {
-	for i, _ := range v {
+	for i := range v {
 		dim := v[i].dim
 		x := v[i].value
 
@@ -137,7 +137,7 @@ type fElement struct {
 type fVector []fElement
 
 func (v fVector) squaredNorm() float32 {
-	var norm2 float32 = 0
+	var norm2 float32
 	for i := 0; i < len(v); i++ {
 		val := v[i].value
 		norm2 += val * val
