@@ -13,7 +13,7 @@ func init() {
 	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newAROWState)); err != nil {
 		panic(err)
 	}
-	if err := udf.RegisterGlobalUDF("jubaclassifier_arow_classify", udf.MustConvertGeneric(arowClassify)); err != nil {
+	if err := udf.RegisterGlobalUDF("jubaclassify", udf.MustConvertGeneric(arowClassify)); err != nil {
 		panic(err)
 	}
 }
