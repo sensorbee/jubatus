@@ -88,7 +88,7 @@ func (r *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			if len(fields) != 2 {
 				panic("hoge")
 			}
-			for i, _ := range fields {
+			for i := range fields {
 				fields[i] = strings.TrimSpace(fields[i])
 			}
 			if i < len(numFieldNames) {
