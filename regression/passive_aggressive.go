@@ -23,10 +23,10 @@ type PassiveAggressive struct {
 // sensitivity must not be less than zero.
 func NewPassiveAggressive(regWeight float32, sensitivity float32) (*PassiveAggressive, error) {
 	if regWeight <= 0 {
-		return nil, errors.New("TODO")
+		return nil, errors.New("regularization weight must be larger than zero")
 	}
 	if sensitivity < 0 {
-		return nil, errors.New("TODO")
+		return nil, errors.New("sensitivity must not be less than zero")
 	}
 	return &PassiveAggressive{
 		model:       make(model),
