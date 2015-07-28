@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/jubatus/regression"
 	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
@@ -23,7 +24,7 @@ type paState struct {
 }
 
 func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
-	rw, err := extractFloat32Parameter(params, "regularization_weight")
+	rw, err := pluginutil.ExtractParamAndConvertToFloat(params, "regularization_weight")
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 		return nil, errors.New("regularization_weight parameter must be greater than zero")
 	}
 
-	sen, err := extractFloat32Parameter(params, "sensitivity")
+	sen, err := pluginutil.ExtractParamAndConvertToFloat(params, "sensitivity")
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 		return nil, errors.New("sensitivity parameter must be not less than zero")
 	}
 
-	pa, err := regression.NewPassiveAggressive(rw, sen)
+	pa, err := regression.NewPassiveAggressive(float32(rw), float32(sen))
 	if err != nil {
 		return nil, err
 	}
@@ -84,19 +85,6 @@ func paEstimate(ctx *core.Context, stateName string, featureVector data.Map) (fl
 	}
 
 	return s.pa.Estimate(regression.FeatureVector(featureVector))
-}
-
-func extractFloat32Parameter(m data.Map, name string) (float32, error) {
-	v, ok := m[name]
-	if !ok {
-		return 0, fmt.Errorf("%s parameter is missing", name)
-	}
-	x, err := data.ToFloat(v)
-	if err != nil {
-		return 0, fmt.Errorf("%s parameter cannot be converted to float: %v", err)
-	}
-
-	return float32(x), nil
 }
 
 func lookupPAState(ctx *core.Context, stateName string) (*paState, error) {
