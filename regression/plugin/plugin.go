@@ -13,7 +13,7 @@ func init() {
 	if err := udf.RegisterGlobalUDSCreator("jubaregression_pa", udf.UDSCreatorFunc(newPAState)); err != nil {
 		panic(err)
 	}
-	if err := udf.RegisterGlobalUDF("jubaregression_pa_estimate", udf.MustConvertGeneric(paEstimate)); err != nil {
+	if err := udf.RegisterGlobalUDF("jubaregression_estimate", udf.MustConvertGeneric(paEstimate)); err != nil {
 		panic(err)
 	}
 }
