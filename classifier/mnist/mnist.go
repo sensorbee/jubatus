@@ -18,9 +18,9 @@ type source struct {
 	file *os.File
 }
 
-func (m *source) GenerateStream(ctx *core.Context, w core.Writer) error {
-	m.file.Seek(0, 0)
-	r := bufio.NewReaderSize(m.file, 10000)
+func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
+	s.file.Seek(0, 0)
+	r := bufio.NewReaderSize(s.file, 10000)
 	for {
 		l, _, err := r.ReadLine()
 		if err != nil {
