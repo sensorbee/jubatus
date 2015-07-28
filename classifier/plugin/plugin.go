@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"pfi/sensorbee/jubatus/classifier"
+	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
 	"pfi/sensorbee/sensorbee/data"
@@ -30,15 +31,15 @@ type arowState struct {
 }
 
 func newAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) {
-	label, err := extractParamAsStringWithDefault(params, "label_field", "label")
+	label, err := pluginutil.ExtractParamAsStringWithDefault(params, "label_field", "label")
 	if err != nil {
 		return nil, err
 	}
-	fv, err := extractParamAsStringWithDefault(params, "feature_vector_field", "feature_vector")
+	fv, err := pluginutil.ExtractParamAsStringWithDefault(params, "feature_vector_field", "feature_vector")
 	if err != nil {
 		return nil, err
 	}
-	rw, err := extractParamAndConvertToFloat(params, "regularization_weight")
+	rw, err := pluginutil.ExtractParamAndConvertToFloat(params, "regularization_weight")
 	if rw <= 0 {
 		return nil, errors.New("regularization_weight parameter must be greater than zero")
 	}
@@ -106,29 +107,4 @@ func lookupAROWState(ctx *core.Context, stateName string) (*arowState, error) {
 		return s, nil
 	}
 	return nil, fmt.Errorf("state '%v' cannot be converted to arowState", stateName)
-}
-
-func extractParamAsStringWithDefault(params data.Map, key, def string) (string, error) {
-	v, ok := params[key]
-	if !ok {
-		return def, nil
-	}
-
-	s, err := data.AsString(v)
-	if err != nil {
-		return "", fmt.Errorf("%s parameter is not a string: %v", key, err)
-	}
-	return s, nil
-}
-
-func extractParamAndConvertToFloat(params data.Map, key string) (float64, error) {
-	v, ok := params[key]
-	if !ok {
-		return 0, fmt.Errorf("%s parameter is missing", key)
-	}
-	x, err := data.ToFloat(v)
-	if err != nil {
-		return 0, fmt.Errorf("%s parameter cannot be converted to float: %v", key, err)
-	}
-	return x, nil
 }
