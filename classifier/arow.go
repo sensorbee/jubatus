@@ -117,7 +117,7 @@ func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForSco
 			return nil, err
 		}
 		x := float32(xx)
-		if d := intern.MayGet(f); d != 0 {
+		if d := intern.GetOrZero(f); d != 0 {
 			ret = append(ret, fElement{dim(d), x})
 		}
 	}
@@ -133,7 +133,7 @@ func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVec
 			return nil, nil, err
 		}
 		x := float32(xx)
-		if d := intern.MayGet(f); d != 0 {
+		if d := intern.GetOrZero(f); d != 0 {
 			full[l] = fElement{dim(d), x}
 			l++
 		} else {

@@ -12,12 +12,12 @@ func New() *Intern {
 	}
 }
 
-func (i *Intern) MayGet(s string) int {
+func (i *Intern) GetOrZero(s string) int {
 	return i.storage[s]
 }
 
 func (i *Intern) Get(s string) int {
-	if i.MayGet(s) == 0 {
+	if i.GetOrZero(s) == 0 {
 		i.gen++
 		i.storage[s] = i.gen
 		return i.gen
