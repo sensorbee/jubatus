@@ -20,10 +20,21 @@ func init() {
 }
 
 type paState struct {
-	pa *regression.PassiveAggressive
+	pa                 *regression.PassiveAggressive
+	valueField         string
+	featureVectorField string
 }
 
 func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+	value, err := pluginutil.ExtractParamAsStringWithDefault(params, "value_field", "value")
+	if err != nil {
+		return nil, err
+	}
+	fv, err := pluginutil.ExtractParamAsStringWithDefault(params, "feature_vector_field", "feature_vector")
+	if err != nil {
+		return nil, err
+	}
+
 	rw, err := pluginutil.ExtractParamAndConvertToFloat(params, "regularization_weight")
 	if err != nil {
 		return nil, err
@@ -46,7 +57,9 @@ func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	}
 
 	return &paState{
-		pa: pa,
+		pa:                 pa,
+		valueField:         value,
+		featureVectorField: fv,
 	}, nil
 }
 
@@ -55,23 +68,23 @@ func (*paState) Terminate(ctx *core.Context) error {
 }
 
 func (pa *paState) Write(ctx *core.Context, t *core.Tuple) error {
-	vval, ok := t.Data["value"]
+	vval, ok := t.Data[pa.valueField]
 	if !ok {
-		return errors.New("value field is missing")
+		return fmt.Errorf("%s field is missing", pa.valueField)
 	}
 	val64, err := data.ToFloat(vval)
 	if err != nil {
-		return fmt.Errorf("value cannot be converted to float: %v", err)
+		return fmt.Errorf("%s cannot be converted to float: %v", pa.valueField, err)
 	}
 	val := float32(val64)
 
-	vfv, ok := t.Data["feature_vector"]
+	vfv, ok := t.Data[pa.featureVectorField]
 	if !ok {
-		return errors.New("feature_vector field is missing")
+		return fmt.Errorf("%s field is missing", pa.featureVectorField)
 	}
 	fv, err := data.AsMap(vfv)
 	if err != nil {
-		return fmt.Errorf("feature_vector value is not a map: %v", err)
+		return fmt.Errorf("%s value is not a map: %v", pa.featureVectorField, err)
 	}
 
 	err = pa.pa.Train(regression.FeatureVector(fv), val)
