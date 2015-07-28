@@ -15,12 +15,16 @@ import (
 )
 
 type source struct {
-	file *os.File
+	path string
 }
 
 func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
-	s.file.Seek(0, 0)
-	r := bufio.NewReaderSize(s.file, 10000)
+	f, err := os.Open(s.path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	r := bufio.NewReaderSize(f, 10000)
 	for {
 		l, _, err := r.ReadLine()
 		if err != nil {
@@ -65,7 +69,7 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 }
 
 func (s *source) Stop(*core.Context) error {
-	return s.file.Close()
+	return nil
 }
 
 func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (core.Source, error) {
@@ -77,19 +81,9 @@ func createSource(ctx *core.Context, ioParams *bql.IOParams, params data.Map) (c
 	if err != nil {
 		return nil, fmt.Errorf("path parameter is not a string: %v", err)
 	}
-	source, err := new(path)
-	if err != nil {
-		return nil, err
-	}
-	return core.NewRewindableSource(source), nil
-}
-
-func new(path string) (*source, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	return &source{f}, nil
+	return core.NewRewindableSource(&source{
+		path: path,
+	}), nil
 }
 
 func init() {
