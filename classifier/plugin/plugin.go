@@ -13,6 +13,11 @@ func init() {
 	if err := udf.RegisterGlobalUDSCreator("jubaclassifier_arow", udf.UDSCreatorFunc(newAROWState)); err != nil {
 		panic(err)
 	}
+
+	// The name jubaclassify is not only for AROW, but for all classifier algorithms.
+	// We have implemented only AROW, so we use the name for arowClassify for now.
+	// When we have to implement another classification algorithm, generalize jubaclassify
+	// to other algorithms. For example, define classifier.Classifier and adjust all algorithms to it.
 	if err := udf.RegisterGlobalUDF("jubaclassify", udf.MustConvertGeneric(arowClassify)); err != nil {
 		panic(err)
 	}
