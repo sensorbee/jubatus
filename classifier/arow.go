@@ -3,7 +3,7 @@ package classifier
 import (
 	"errors"
 	"math"
-	"pfi/sensorbee/jubatus/common/intern"
+	"pfi/sensorbee/jubatus/internal/intern"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
