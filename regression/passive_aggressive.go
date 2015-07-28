@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// PassiveAggressive holds a model for regression.
 type PassiveAggressive struct {
 	model
 	sum   float32
@@ -18,6 +19,8 @@ type PassiveAggressive struct {
 	sensitivity float32
 }
 
+// NewPassiveAggressive creates a PassiveAggressive model. regWeight must be greater than zero.
+// sensitivity must not be less than zero.
 func NewPassiveAggressive(regWeight float32, sensitivity float32) (*PassiveAggressive, error) {
 	if regWeight <= 0 {
 		return nil, errors.New("TODO")
@@ -32,6 +35,7 @@ func NewPassiveAggressive(regWeight float32, sensitivity float32) (*PassiveAggre
 	}, nil
 }
 
+// Train trains a model with a feature vector and a value.
 func (pa *PassiveAggressive) Train(v FeatureVector, value float32) error {
 	fv, err := v.toInternal()
 	if err != nil {
@@ -62,6 +66,7 @@ func (pa *PassiveAggressive) Train(v FeatureVector, value float32) error {
 	return nil
 }
 
+// Estimate estimates a value from a model and a feature vector.
 func (pa *PassiveAggressive) Estimate(v FeatureVector) (float32, error) {
 	fv, err := v.toInternal()
 	if err != nil {
@@ -74,6 +79,7 @@ func (pa *PassiveAggressive) Estimate(v FeatureVector) (float32, error) {
 	return pa.estimate(fv), nil
 }
 
+// Clear clears a model.
 func (pa *PassiveAggressive) Clear() {
 	pa.m.Lock()
 	defer pa.m.Unlock()
@@ -84,10 +90,12 @@ func (pa *PassiveAggressive) Clear() {
 	pa.count = 0
 }
 
+// RegWeight returns regularization weight.
 func (pa *PassiveAggressive) RegWeight() float32 {
 	return pa.regWeight
 }
 
+// Sensitivity returns sensitivity.
 func (pa *PassiveAggressive) Sensitivity() float32 {
 	return pa.sensitivity
 }
@@ -116,6 +124,7 @@ type dim string
 
 type model map[dim]float32
 
+// FeatureVector is a type for feature vectors.
 type FeatureVector data.Map
 
 func (v FeatureVector) toInternal() (fVector, error) {
