@@ -9,7 +9,7 @@ import (
 
 // PassiveAggressive holds a model for regression.
 type PassiveAggressive struct {
-	model
+	model model
 	sum   float32
 	sqSum float32
 	count uint64
@@ -140,7 +140,7 @@ func (v FeatureVector) toInternal() (fVector, error) {
 }
 
 type fElement struct {
-	dim
+	dim   dim
 	value float32
 }
 type fVector []fElement

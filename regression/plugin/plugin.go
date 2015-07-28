@@ -19,7 +19,7 @@ func init() {
 }
 
 type paState struct {
-	*regression.PassiveAggressive
+	pa *regression.PassiveAggressive
 }
 
 func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
@@ -45,7 +45,7 @@ func newPAState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	}
 
 	return &paState{
-		PassiveAggressive: pa,
+		pa: pa,
 	}, nil
 }
 
@@ -73,7 +73,7 @@ func (pa *paState) Write(ctx *core.Context, t *core.Tuple) error {
 		return fmt.Errorf("feature_vector value is not a map: %v", err)
 	}
 
-	err = pa.PassiveAggressive.Train(regression.FeatureVector(fv), val)
+	err = pa.pa.Train(regression.FeatureVector(fv), val)
 	return err
 }
 
@@ -83,7 +83,7 @@ func paEstimate(ctx *core.Context, stateName string, featureVector data.Map) (fl
 		return 0, err
 	}
 
-	return s.PassiveAggressive.Estimate(regression.FeatureVector(featureVector))
+	return s.pa.Estimate(regression.FeatureVector(featureVector))
 }
 
 func extractFloat32Parameter(m data.Map, name string) (float32, error) {
