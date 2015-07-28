@@ -15,13 +15,13 @@ import (
 
 // TODO: remove panics
 
-type rentSource struct {
+type source struct {
 	file     *os.File
 	r        *bufio.Reader
 	training bool
 }
 
-func (r *rentSource) GenerateStream(ctx *core.Context, w core.Writer) error {
+func (r *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 	numFieldNames := []string{
 		"家賃(万円)",
 		"駅からの徒歩時間 (分)",
@@ -120,11 +120,11 @@ func (r *rentSource) GenerateStream(ctx *core.Context, w core.Writer) error {
 	return nil
 }
 
-func (*rentSource) Stop(*core.Context) error {
+func (*source) Stop(*core.Context) error {
 	return nil
 }
 
-func (r *rentSource) readLine() (string, error) {
+func (r *source) readLine() (string, error) {
 	l, _, err := r.r.ReadLine()
 	if err != nil {
 		return "", err
@@ -140,13 +140,13 @@ func createTestSource(*core.Context, *bql.IOParams, data.Map) (core.Source, erro
 	return new("myhome.yml", false)
 }
 
-func new(path string, training bool) (*rentSource, error) {
+func new(path string, training bool) (*source, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	r := bufio.NewReader(f)
-	return &rentSource{f, r, training}, nil
+	return &source{f, r, training}, nil
 }
 
 func init() {
