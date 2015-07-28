@@ -1,4 +1,4 @@
-package rent_source
+package rent
 
 import (
 	"bufio"
