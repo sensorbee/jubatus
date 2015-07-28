@@ -48,7 +48,7 @@ func (a *AROW) Train(v FeatureVector, label Label) error {
 		return err
 	}
 	scores := a.model.scores(fvForScores)
-	incorr := scores.maxExcept(label)
+	incorr, _ := scores.maxExcept(label)
 	margin := scores.margin(label, incorr)
 
 	if margin <= -1 {
@@ -226,23 +226,22 @@ func (s LScores) score(l Label) float32 {
 	return float32(sc)
 }
 
-// Max returns a label whose score is larger than others.
-func (s LScores) Max() Label {
+// Max returns a max scored label and the score
+func (s LScores) Max() (label Label, score float32) {
 	return s.maxExcept("")
 }
 
-func (s LScores) maxExcept(except Label) Label {
-	maxSc := float32(math.Inf(-1))
-	var ret Label
+func (s LScores) maxExcept(except Label) (label Label, score float32) {
+	score = float32(math.Inf(-1))
 	for l := range s {
 		la := Label(l)
 		sc := s.score(la)
-		if sc > maxSc && la != except {
-			maxSc = sc
-			ret = la
+		if sc > score && la != except {
+			label = la
+			score = sc
 		}
 	}
-	return ret
+	return
 }
 
 func (s LScores) margin(correct Label, incorrect Label) float32 {
