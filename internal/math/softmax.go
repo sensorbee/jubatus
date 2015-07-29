@@ -49,6 +49,7 @@ func logSumExp(v []float64) float64 {
 		return math.NaN()
 	}
 
+	// TODO: consider better calculation order to reduce floating-point error.
 	sort.Float64s(v)
 	x := v[0]
 	for i := 1; i < len(v); i++ {
