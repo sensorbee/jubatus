@@ -3,6 +3,7 @@ package plugin
 import (
 	"errors"
 	"fmt"
+	"math"
 	"pfi/sensorbee/jubatus/classifier"
 	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/sensorbee/bql/udf"
@@ -20,6 +21,11 @@ func init() {
 	// When we have to implement another classification algorithm, generalize jubaclassify
 	// to other algorithms. For example, define classifier.Classifier and adjust all algorithms to it.
 	if err := udf.RegisterGlobalUDF("jubaclassify", udf.MustConvertGeneric(arowClassify)); err != nil {
+		panic(err)
+	}
+
+	// TODO: consider to rename
+	if err := udf.RegisterGlobalUDF("juba_classified_label", udf.MustConvertGeneric(classifiedLabel)); err != nil {
 		panic(err)
 	}
 }
@@ -107,4 +113,28 @@ func lookupAROWState(ctx *core.Context, stateName string) (*arowState, error) {
 		return s, nil
 	}
 	return nil, fmt.Errorf("state '%v' cannot be converted to arowState", stateName)
+}
+
+func classifiedLabel(ctx *core.Context, scores data.Map) (string, error) {
+	if len(scores) == 0 {
+		return "", errors.New("attempt to get a label from an empty map")
+	}
+
+	// classifier.LScores.Max() cannot be used here because
+	// scores is passed by a user. classifier.LScores.Max()
+	// expects all values are float.
+	maxSc := math.Inf(-1)
+	var maxLabel string
+	for l, s := range scores {
+		sc, err := data.AsFloat(s)
+		if err != nil {
+			return "", fmt.Errorf("score for %s is not a float: %v", l, err)
+		}
+		if sc > maxSc {
+			maxSc = sc
+			maxLabel = l
+		}
+	}
+
+	return maxLabel, nil
 }
