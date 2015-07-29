@@ -42,9 +42,11 @@ func mapToValues(v data.Map) ([]float64, error) {
 	return values, nil
 }
 
+// logSumExp calculates logsumexp. When calling this function with an empty
+// slice, the behavior is undefined.
 func logSumExp(v []float64) float64 {
 	if len(v) == 0 {
-		return 0 // TODO: fix
+		return math.NaN()
 	}
 
 	sort.Float64s(v)
