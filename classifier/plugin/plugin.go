@@ -3,8 +3,9 @@ package plugin
 import (
 	"errors"
 	"fmt"
-	"math"
+	stdMath "math"
 	"pfi/sensorbee/jubatus/classifier"
+	"pfi/sensorbee/jubatus/internal/math"
 	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
@@ -26,6 +27,10 @@ func init() {
 
 	// TODO: consider to rename
 	if err := udf.RegisterGlobalUDF("juba_classified_label", udf.MustConvertGeneric(classifiedLabel)); err != nil {
+		panic(err)
+	}
+
+	if err := udf.RegisterGlobalUDF("juba_softmax", udf.MustConvertGeneric(math.Softmax)); err != nil {
 		panic(err)
 	}
 }
@@ -123,7 +128,7 @@ func classifiedLabel(ctx *core.Context, scores data.Map) (string, error) {
 	// classifier.LScores.Max() cannot be used here because
 	// scores is passed by a user. classifier.LScores.Max()
 	// expects all values are float.
-	maxSc := math.Inf(-1)
+	maxSc := stdMath.Inf(-1)
 	var maxLabel string
 	for l, s := range scores {
 		sc, err := data.AsFloat(s)
