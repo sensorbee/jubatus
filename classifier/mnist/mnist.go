@@ -26,14 +26,16 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 	defer f.Close()
 	r := bufio.NewReaderSize(f, 10000)
 	for {
-		l, _, err := r.ReadLine()
+		line, err := r.ReadString('\n')
 		if err != nil {
-			if err == io.EOF {
+			if err != io.EOF {
+				return err
+			}
+			line = strings.TrimSpace(line)
+			if len(line) == 0 {
 				return nil
 			}
-			return err
 		}
-		line := string(l)
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, " ")
 		if len(fields) <= 1 {
