@@ -128,18 +128,35 @@ func classifiedLabel(ctx *core.Context, scores data.Map) (string, error) {
 	// classifier.LScores.Max() cannot be used here because
 	// scores is passed by a user. classifier.LScores.Max()
 	// expects all values are float.
-	maxSc := stdMath.Inf(-1)
-	var maxLabel string
+	l, _, err := maxLabelScore(scores)
+	if err != nil {
+		return "", err
+	}
+	return l, nil
+}
+
+// maxLabelScore returns the max score and its label in a data.Map.
+// This function are same as classifier.LScores.Max() except error checking.
+func maxLabelScore(scores data.Map) (label string, score float64, err error) {
+	if len(scores) == 0 {
+		err = errors.New("attempt to find a max score from an empty map")
+		return "", 0, err
+	}
+
+	score = minusInf
 	for l, s := range scores {
 		sc, err := data.AsFloat(s)
 		if err != nil {
-			return "", fmt.Errorf("score for %s is not a float: %v", l, err)
+			err = fmt.Errorf("score for %s is not a float: %v", l, err)
+			return "", 0, err
 		}
-		if sc > maxSc {
-			maxSc = sc
-			maxLabel = l
+		if sc > score {
+			label = l
+			score = sc
 		}
 	}
 
-	return maxLabel, nil
+	return label, score, nil
 }
+
+var minusInf = stdMath.Inf(-1)
