@@ -38,7 +38,7 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 		}
 		line = strings.TrimSpace(line)
 		fields := strings.Split(line, " ")
-		if len(fields) <= 1 {
+		if len(fields) == 0 {
 			continue
 		}
 		label := fields[0]
