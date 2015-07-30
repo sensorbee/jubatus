@@ -24,7 +24,7 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 		return err
 	}
 	defer f.Close()
-	r := bufio.NewReaderSize(f, 10000)
+	r := bufio.NewReader(f)
 	for {
 		line, err := r.ReadString('\n')
 		if err != nil {
