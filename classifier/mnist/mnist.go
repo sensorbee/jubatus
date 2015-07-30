@@ -25,7 +25,7 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 	}
 	defer f.Close()
 	r := bufio.NewReader(f)
-	for {
+	for lineNo := 1; ; lineNo++ {
 		line, err := r.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
@@ -43,14 +43,14 @@ func (s *source) GenerateStream(ctx *core.Context, w core.Writer) error {
 		}
 		label := fields[0]
 		fv := make(data.Map)
-		for _, s := range fields[1:] {
-			pair := strings.Split(s, ":")
+		for _, field := range fields[1:] {
+			pair := strings.Split(field, ":")
 			if len(pair) != 2 {
-				continue
+				return fmt.Errorf("invalid libsvm format at %s:%d", s.path, lineNo)
 			}
 			v, err := strconv.Atoi(pair[1])
 			if err != nil {
-				continue
+				return fmt.Errorf("invalid libsvm format at %s:%d: %v", s.path, lineNo, err)
 			}
 			fv[pair[0]] = data.Float(v) / 255
 		}
