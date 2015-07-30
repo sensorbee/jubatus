@@ -30,6 +30,10 @@ func init() {
 		panic(err)
 	}
 
+	if err := udf.RegisterGlobalUDF("juba_classified_score", udf.MustConvertGeneric(classifiedScore)); err != nil {
+		panic(err)
+	}
+
 	if err := udf.RegisterGlobalUDF("juba_softmax", udf.MustConvertGeneric(math.Softmax)); err != nil {
 		panic(err)
 	}
@@ -133,6 +137,18 @@ func classifiedLabel(ctx *core.Context, scores data.Map) (string, error) {
 		return "", err
 	}
 	return l, nil
+}
+
+func classifiedScore(ctx *core.Context, scores data.Map) (float64, error) {
+	if len(scores) == 0 {
+		return 0, errors.New("attempt to get a score from an empty map")
+	}
+
+	_, s, err := maxLabelScore(scores)
+	if err != nil {
+		return 0, err
+	}
+	return s, nil
 }
 
 // maxLabelScore returns the max score and its label in a data.Map.
