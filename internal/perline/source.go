@@ -3,7 +3,6 @@ package perline
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"pfi/sensorbee/sensorbee/core"
 	"pfi/sensorbee/sensorbee/data"
@@ -55,7 +54,7 @@ func (s *Source) GenerateStream(ctx *core.Context, w core.Writer) error {
 			if err == Pass {
 				continue
 			}
-			return fmt.Errorf("%v at ", err)
+			return err
 		}
 		now := time.Now()
 		err = w.Write(ctx, &core.Tuple{
