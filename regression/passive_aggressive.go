@@ -60,6 +60,11 @@ func (pa *PassiveAggressive) Train(v FeatureVector, value float32) error {
 		return nil
 	}
 
+	// zero vector generates inf or nan.
+	if fv.squaredNorm() < 1e-12 {
+		return nil
+	}
+
 	C := pa.regWeight
 	coeff := sign(error) * min(C, loss) / fv.squaredNorm()
 	pa.update(fv, coeff)
