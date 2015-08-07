@@ -19,14 +19,14 @@ func NewMinhash(bitNum int) *Minhash {
 }
 
 func (m *Minhash) SetRow(id ID, v FeatureVector) {
-	if len(m.data) <= int(id) {
-		m.extend(int(id) + 1)
+	if len(m.data) < int(id) {
+		m.extend(int(id))
 	}
-	m.data[id] = m.hash(v)
+	m.data[id-1] = m.hash(v)
 }
 
 func (m *Minhash) NeighborRowFromID(id ID, size int) []IDist {
-	return m.neighborRowFromHash(m.data[id], size)
+	return m.neighborRowFromHash(m.data[id-1], size)
 }
 
 func (m *Minhash) NeighborRowFromFV(v FeatureVector, size int) []IDist {

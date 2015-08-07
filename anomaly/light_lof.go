@@ -2,6 +2,7 @@ package anomaly
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"pfi/sensorbee/jubatus/internal/nearest"
 	"pfi/sensorbee/sensorbee/data"
@@ -43,6 +44,9 @@ func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
 // func (l *LightLOF) Update(id ID, v FeatureVector) float32
 
 func (l *LightLOF) Overwrite(id ID, v FeatureVector) (score float32, err error) {
+	if id <= 0 {
+		return 0, fmt.Errorf("invalid id %d", id)
+	}
 	if id > l.idgen {
 		return 0, errors.New("TODO")
 	}
@@ -81,7 +85,7 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 		id := ID(nnID)
 		nnResult := l.nn.NeighborRowFromID(nnID, l.nnNum)
 		nestedNeighbors[id] = nnResult
-		l.kdists[id] = nnResult[len(nnResult)-1].Dist
+		l.kdists[id-1] = nnResult[len(nnResult)-1].Dist
 	}
 
 	for i := range neighborsAndThePoint {
@@ -101,7 +105,7 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 				lrd = float32(length) / sumReachablity
 			}
 		}
-		l.lrds[id] = lrd
+		l.lrds[id-1] = lrd
 	}
 }
 
@@ -135,8 +139,8 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 
 func (l *LightLOF) getRowParameter(id ID) parameter {
 	return parameter{
-		kdist: l.kdists[id],
-		lrd:   l.lrds[id],
+		kdist: l.kdists[id-1],
+		lrd:   l.lrds[id-1],
 	}
 }
 
