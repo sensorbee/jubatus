@@ -31,8 +31,9 @@ func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
 	l.idgen++
 	id = l.idgen
 
-	l.kdists = append(l.kdists, -1)
-	l.lrds = append(l.lrds, -1)
+	if len(l.kdists) < int(id) {
+		l.extend(int(id))
+	}
 
 	l.setRow(id, v)
 
@@ -136,6 +137,18 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 	return float32(len(neighbors)) / sumReachability, neighborLRDs
 }
 
+func (l *LightLOF) extend(n int) {
+	n = maxInt(2*len(l.kdists), n)
+	l.kdists = realloc(l.kdists, n)
+	l.lrds = realloc(l.lrds, n)
+}
+
+func realloc(s []float32, n int) []float32 {
+	ret := make([]float32, n)
+	copy(ret, s)
+	return ret
+}
+
 func calcLOF(lrd float32, neighborLRDs []float32) float32 {
 	if len(neighborLRDs) == 0 {
 		if lrd == 0 {
@@ -164,6 +177,13 @@ func minInt(x, y int) int {
 		return x
 	}
 	return y
+}
+
+func maxInt(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
 }
 
 func maxFloat32(x, y float32) float32 {
