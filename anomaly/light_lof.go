@@ -98,7 +98,7 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 			length := minInt(len(nn), l.nnNum)
 			var sumReachablity float32
 			for i := 0; i < length; i++ {
-				sumReachablity += maxFloat32(nn[i].Dist, l.kdists[nn[i].ID])
+				sumReachablity += maxFloat32(nn[i].Dist, l.kdists[nn[i].ID-1])
 			}
 			if sumReachablity == 0 {
 				lrd = inf32

@@ -10,6 +10,7 @@ import (
 type Minhash struct {
 	bitNum int
 	data   []*big.Int
+	ndata  int
 }
 
 func NewMinhash(bitNum int) *Minhash {
@@ -19,6 +20,7 @@ func NewMinhash(bitNum int) *Minhash {
 }
 
 func (m *Minhash) SetRow(id ID, v FeatureVector) {
+	m.ndata = maxInt(m.ndata, int(id))
 	if len(m.data) < int(id) {
 		m.extend(int(id))
 	}
@@ -50,17 +52,16 @@ func (m *Minhash) extend(n int) {
 }
 
 func (m *Minhash) rankingHammingBitVectors(bv *big.Int, size int) []IDist {
-	ret := make([]IDist, len(m.data))
-	for i := 0; i < len(m.data); i++ {
+	ret := make([]IDist, m.ndata)
+	for i := 0; i < m.ndata; i++ {
 		dist := m.calcHammingDistance(bv, m.data[i])
 		ret[i] = IDist{
-			ID:   ID(i),
+			ID:   ID(i + 1),
 			Dist: float32(dist),
 		}
 	}
 	sort.Sort(sortByDist(ret))
-	ret = ret[:size]
-
+	ret = ret[:minInt(size, len(ret))]
 	return ret
 }
 
@@ -208,6 +209,13 @@ func calcStringHash(s string) uint64 {
 
 func log32(x float32) float32 {
 	return float32(math.Log(float64(x)))
+}
+
+func minInt(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
 }
 
 func maxInt(x, y int) int {
