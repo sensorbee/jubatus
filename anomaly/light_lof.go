@@ -115,22 +115,18 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 		return inf32, nil
 	}
 
+	neighborKDists := make([]float32, len(neighbors))
 	neighborLRDs := make([]float32, len(neighbors))
-	parameters := make([]parameter, len(neighbors))
 
 	for i := range neighbors {
 		id := ID(neighbors[i].ID)
-		p := parameter{
-			kdist: l.kdists[id-1],
-			lrd:   l.lrds[id-1],
-		}
-		neighborLRDs[i] = p.lrd
-		parameters[i] = p
+		neighborKDists[i] = l.kdists[id-1]
+		neighborLRDs[i] = l.lrds[id-1]
 	}
 
 	var sumReachability float32
 	for i := range neighbors {
-		sumReachability += maxFloat32(neighbors[i].Dist, parameters[i].kdist)
+		sumReachability += maxFloat32(neighbors[i].Dist, neighborKDists[i])
 	}
 
 	if sumReachability == 0 {
@@ -182,8 +178,3 @@ func isInf32(x float32) bool {
 }
 
 var inf32 = float32(math.Inf(1))
-
-type parameter struct {
-	kdist float32
-	lrd   float32
-}
