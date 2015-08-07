@@ -120,7 +120,10 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 
 	for i := range neighbors {
 		id := ID(neighbors[i].ID)
-		p := l.getRowParameter(id)
+		p := parameter{
+			kdist: l.kdists[id-1],
+			lrd:   l.lrds[id-1],
+		}
 		neighborLRDs[i] = p.lrd
 		parameters[i] = p
 	}
@@ -135,13 +138,6 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 	}
 
 	return float32(len(neighbors)) / sumReachability, neighborLRDs
-}
-
-func (l *LightLOF) getRowParameter(id ID) parameter {
-	return parameter{
-		kdist: l.kdists[id-1],
-		lrd:   l.lrds[id-1],
-	}
 }
 
 func calcLOF(lrd float32, neighborLRDs []float32) float32 {
