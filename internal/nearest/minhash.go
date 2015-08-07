@@ -82,15 +82,22 @@ func (s sortByDist) Swap(i, j int) {
 func (m *Minhash) calcHammingDistance(x, y *big.Int) uint64 {
 	xb := x.Bytes()
 	yb := y.Bytes()
-	if len(xb) != len(yb) {
-		// TODO: remove this panic
-		panic("calcHammingDistance")
+
+	minLen := len(yb)
+	maxLen := len(xb)
+	if len(xb) < len(yb) {
+		xb, yb = yb, xb
+		minLen, maxLen = maxLen, minLen
 	}
 
 	var ret uint64
-	for i := 0; i < len(xb); i++ {
+	for i := 0; i < minLen; i++ {
 		ret += bitcount(xb[i] ^ yb[i])
 	}
+	for i := minLen; i < maxLen; i++ {
+		ret += bitcount(xb[i])
+	}
+
 	return ret
 }
 
