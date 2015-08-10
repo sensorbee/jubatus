@@ -37,7 +37,7 @@ func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
 
 	l.setRow(id, v)
 
-	score = l.CalcScore(v)
+	score = l.calcScoreByID(id)
 	return id, score
 }
 
@@ -54,13 +54,18 @@ func (l *LightLOF) Overwrite(id ID, v FeatureVector) (score float32, err error) 
 
 	l.setRow(id, v)
 
-	score = l.CalcScore(v)
+	score = l.calcScoreByID(id)
 
 	return
 }
 
 func (l *LightLOF) CalcScore(v FeatureVector) float32 {
 	lrd, neighborLRDs := l.collectLRDs(v)
+	return calcLOF(lrd, neighborLRDs)
+}
+
+func (l *LightLOF) calcScoreByID(id ID) float32 {
+	lrd, neighborLRDs := l.collectLRDsByID(id)
 	return calcLOF(lrd, neighborLRDs)
 }
 
@@ -111,6 +116,40 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 
 func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 	neighbors := l.nn.NeighborRowFromFV(nearest.FeatureVector(v), l.nnNum)
+	if len(neighbors) == 0 {
+		return inf32, nil
+	}
+
+	neighborKDists := make([]float32, len(neighbors))
+	neighborLRDs := make([]float32, len(neighbors))
+
+	for i := range neighbors {
+		id := ID(neighbors[i].ID)
+		neighborKDists[i] = l.kdists[id-1]
+		neighborLRDs[i] = l.lrds[id-1]
+	}
+
+	var sumReachability float32
+	for i := range neighbors {
+		sumReachability += maxFloat32(neighbors[i].Dist, neighborKDists[i])
+	}
+
+	if sumReachability == 0 {
+		return inf32, neighborLRDs
+	}
+
+	return float32(len(neighbors)) / sumReachability, neighborLRDs
+}
+
+func (l *LightLOF) collectLRDsByID(id ID) (float32, []float32) {
+	nnID := nearest.ID(id)
+	neighbors := l.nn.NeighborRowFromID(nearest.ID(id), l.nnNum)
+	if len(neighbors) == 0 {
+		return inf32, nil
+	}
+	if neighbors[0].ID == nnID {
+		neighbors = neighbors[1:]
+	}
 	if len(neighbors) == 0 {
 		return inf32, nil
 	}
