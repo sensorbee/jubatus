@@ -62,6 +62,9 @@ func (m *Minhash) rankingHammingBitVectors(bv *big.Int, size int) []IDist {
 	}
 	sort.Sort(sortByDist(ret))
 	ret = ret[:minInt(size, len(ret))]
+	for i := range ret {
+		ret[i].Dist /= float32(m.bitNum)
+	}
 	return ret
 }
 
