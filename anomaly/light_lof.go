@@ -120,25 +120,7 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 		return inf32, nil
 	}
 
-	neighborKDists := make([]float32, len(neighbors))
-	neighborLRDs := make([]float32, len(neighbors))
-
-	for i := range neighbors {
-		id := ID(neighbors[i].ID)
-		neighborKDists[i] = l.kdists[id-1]
-		neighborLRDs[i] = l.lrds[id-1]
-	}
-
-	var sumReachability float32
-	for i := range neighbors {
-		sumReachability += maxFloat32(neighbors[i].Dist, neighborKDists[i])
-	}
-
-	if sumReachability == 0 {
-		return inf32, neighborLRDs
-	}
-
-	return float32(len(neighbors)) / sumReachability, neighborLRDs
+	return l.collectLRDsImpl(neighbors)
 }
 
 func (l *LightLOF) collectLRDsByID(id ID) (float32, []float32) {
@@ -154,6 +136,10 @@ func (l *LightLOF) collectLRDsByID(id ID) (float32, []float32) {
 		return inf32, nil
 	}
 
+	return l.collectLRDsImpl(neighbors)
+}
+
+func (l *LightLOF) collectLRDsImpl(neighbors []nearest.IDist) (float32, []float32) {
 	neighborKDists := make([]float32, len(neighbors))
 	neighborLRDs := make([]float32, len(neighbors))
 
