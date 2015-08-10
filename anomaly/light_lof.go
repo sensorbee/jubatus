@@ -100,14 +100,14 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 		var lrd float32 = 1
 		if len(nn) > 0 {
 			length := minInt(len(nn), l.nnNum)
-			var sumReachablity float32
+			var sumReachability float32
 			for i := 0; i < length; i++ {
-				sumReachablity += maxFloat32(nn[i].Dist, l.kdists[nn[i].ID-1])
+				sumReachability += maxFloat32(nn[i].Dist, l.kdists[nn[i].ID-1])
 			}
-			if sumReachablity == 0 {
+			if sumReachability == 0 {
 				lrd = inf32
 			} else {
-				lrd = float32(length) / sumReachablity
+				lrd = float32(length) / sumReachability
 			}
 		}
 		l.lrds[id-1] = lrd
