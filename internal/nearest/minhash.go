@@ -80,8 +80,8 @@ func (s sortByDist) Swap(i, j int) {
 }
 
 func (m *Minhash) calcHammingDistance(x, y *big.Int) uint64 {
-	xb := x.Bytes()
-	yb := y.Bytes()
+	xb := x.Bits()
+	yb := y.Bits()
 
 	minLen := len(yb)
 	maxLen := len(xb)
@@ -232,7 +232,7 @@ func maxInt(x, y int) int {
 	return x
 }
 
-func bitcount(x byte) uint64 {
+func bitcount(x big.Word) uint64 {
 	var ret uint64
 	for x != 0 {
 		ret++
