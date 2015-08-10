@@ -78,19 +78,18 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 	l.nn.SetRow(nnID, nearest.FeatureVector(v))
 
 	neighbors := l.nn.NeighborRowFromID(nnID, l.rnnNum)
-	neighborsAndThePoint := append(neighbors, nearest.IDist{nnID, 0})
 
 	nestedNeighbors := map[ID][]nearest.IDist{}
-	for i := range neighborsAndThePoint {
-		nnID := neighborsAndThePoint[i].ID
+	for i := range neighbors {
+		nnID := neighbors[i].ID
 		id := ID(nnID)
 		nnResult := l.nn.NeighborRowFromID(nnID, l.nnNum)
 		nestedNeighbors[id] = nnResult
 		l.kdists[id-1] = nnResult[len(nnResult)-1].Dist
 	}
 
-	for i := range neighborsAndThePoint {
-		nnID := neighborsAndThePoint[i].ID
+	for i := range neighbors {
+		nnID := neighbors[i].ID
 		id := ID(nnID)
 		nn := nestedNeighbors[id]
 		var lrd float32 = 1
