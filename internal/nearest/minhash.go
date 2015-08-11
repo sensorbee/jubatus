@@ -75,7 +75,7 @@ func (s sortByDist) Len() int {
 }
 
 func (s sortByDist) Less(i, j int) bool {
-	return s[i].Dist < s[j].Dist
+	return s[i].Dist < s[j].Dist || (s[i].Dist == s[j].Dist && s[i].ID < s[j].ID)
 }
 
 func (s sortByDist) Swap(i, j int) {
