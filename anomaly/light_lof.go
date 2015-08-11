@@ -129,8 +129,12 @@ func (l *LightLOF) collectLRDsByID(id ID) (float32, []float32) {
 	if len(neighbors) == 0 {
 		return inf32, nil
 	}
-	if neighbors[0].ID == nnID {
-		neighbors = neighbors[1:]
+	for i := range neighbors {
+		if neighbors[i].ID == nnID {
+			copy(neighbors[1:i+1], neighbors[0:])
+			neighbors = neighbors[1:]
+			break
+		}
 	}
 	if len(neighbors) > l.nnNum {
 		neighbors = neighbors[:l.nnNum]
