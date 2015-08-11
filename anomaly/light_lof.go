@@ -125,12 +125,15 @@ func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
 
 func (l *LightLOF) collectLRDsByID(id ID) (float32, []float32) {
 	nnID := nearest.ID(id)
-	neighbors := l.nn.NeighborRowFromID(nearest.ID(id), l.nnNum)
+	neighbors := l.nn.NeighborRowFromID(nearest.ID(id), l.nnNum+1)
 	if len(neighbors) == 0 {
 		return inf32, nil
 	}
 	if neighbors[0].ID == nnID {
 		neighbors = neighbors[1:]
+	}
+	if len(neighbors) > l.nnNum {
+		neighbors = neighbors[:l.nnNum]
 	}
 	if len(neighbors) == 0 {
 		return inf32, nil
