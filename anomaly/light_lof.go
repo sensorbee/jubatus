@@ -6,6 +6,7 @@ import (
 	"math"
 	"pfi/sensorbee/jubatus/internal/nearest"
 	"pfi/sensorbee/sensorbee/data"
+	"sync"
 )
 
 type LightLOF struct {
@@ -17,6 +18,8 @@ type LightLOF struct {
 	lrds   []float32
 
 	idgen ID
+
+	m sync.RWMutex
 }
 
 const (
@@ -59,22 +62,42 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, err
 }
 
 func (l *LightLOF) Add(v FeatureVector) (id ID, score float32, err error) {
-	nnFV, err := v.toNNFV()
+	nnfv, err := v.toNNFV()
 	if err != nil {
 		return 0, 0, err
 	}
 
+	l.m.Lock()
+	defer l.m.Unlock()
+
+	id = l.add(nnfv)
+	score = l.calcScoreByID(id)
+	return id, score, nil
+}
+
+func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) (ID, error) {
+	nnfv, err := v.toNNFV()
+	if err != nil {
+		return 0, err
+	}
+
+	l.m.Lock()
+	defer l.m.Unlock()
+
+	return l.add(nnfv), nil
+}
+
+func (l *LightLOF) add(v nearest.FeatureVector) ID {
 	l.idgen++
-	id = l.idgen
+	id := l.idgen
 
 	if len(l.kdists) < int(id) {
 		l.extend(int(id))
 	}
 
-	l.setRow(id, nnFV)
+	l.setRow(id, v)
 
-	score = l.calcScoreByID(id)
-	return id, score, nil
+	return id
 }
 
 // Update does not exist for LightLOF.
@@ -93,6 +116,9 @@ func (l *LightLOF) Overwrite(id ID, v FeatureVector) (score float32, err error) 
 		return 0, err
 	}
 
+	l.m.Lock()
+	defer l.m.Unlock()
+
 	l.setRow(id, nnFV)
 
 	score = l.calcScoreByID(id)
@@ -105,6 +131,10 @@ func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	l.m.RLock()
+	defer l.m.RUnlock()
+
 	lrd, neighborLRDs := l.collectLRDs(nnFV)
 	return calcLOF(lrd, neighborLRDs), nil
 }
