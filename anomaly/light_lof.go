@@ -19,7 +19,16 @@ type LightLOF struct {
 	idgen ID
 }
 
-func NewLightLOF(hashNum, nnNum, rnnNum int) (*LightLOF, error) {
+const (
+	LSH = iota
+	Minhash
+	EuclidLSH
+	InvalidNNAlgorithm
+)
+
+type NNAlgorithm int
+
+func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, error) {
 	if hashNum <= 0 {
 		return nil, errors.New("number of hash bits must be greater than zero")
 	}
@@ -30,8 +39,20 @@ func NewLightLOF(hashNum, nnNum, rnnNum int) (*LightLOF, error) {
 		return nil, errors.New("number of reverse nearest neighbor must be greater than or equal to number of nearest neighbor")
 	}
 
+	var nn nearest.Neighbor
+	switch nnAlgo {
+	case LSH:
+		return nil, errors.New("LSH is unimplemented")
+	case Minhash:
+		nn = nearest.NewMinhash(hashNum)
+	case EuclidLSH:
+		nn = nearest.NewEuclidLSH(hashNum)
+	default:
+		return nil, errors.New("invalid nearest neighbor algorithm")
+	}
+
 	return &LightLOF{
-		nn:     nearest.NewMinhash(hashNum),
+		nn:     nn,
 		nnNum:  nnNum,
 		rnnNum: rnnNum,
 	}, nil
