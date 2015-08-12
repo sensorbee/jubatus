@@ -51,18 +51,21 @@ func (m *Minhash) extend(n int) {
 }
 
 func (m *Minhash) rankingHammingBitVectors(bv *big.Int, size int) []IDist {
-	ret := make([]IDist, m.ndata)
+	buf := make([]IDist, m.ndata)
 	for i := 0; i < m.ndata; i++ {
 		dist := m.calcHammingDistance(bv, m.data[i])
-		ret[i] = IDist{
+		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: float32(dist),
 		}
 	}
-	sort.Sort(sortByDist(ret))
-	ret = ret[:minInt(size, len(ret))]
-	for i := range ret {
-		ret[i].Dist /= float32(m.bitNum)
+	sort.Sort(sortByDist(buf))
+	ret := make([]IDist, minInt(size, len(buf)))
+	for i := 0; i < len(ret); i++ {
+		ret[i] = IDist{
+			ID:   buf[i].ID,
+			Dist: buf[i].Dist / float32(m.bitNum),
+		}
 	}
 	return ret
 }
