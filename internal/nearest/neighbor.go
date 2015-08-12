@@ -1,9 +1,5 @@
 package nearest
 
-import (
-	"pfi/sensorbee/sensorbee/data"
-)
-
 type Neighbor interface {
 	SetRow(id ID, v FeatureVector)
 	NeighborRowFromID(id ID, size int) []IDist
@@ -11,7 +7,11 @@ type Neighbor interface {
 	GetAllRows() []ID
 }
 
-type FeatureVector data.Map
+type FeatureElement struct {
+	Dim   string
+	Value float32
+}
+type FeatureVector []FeatureElement
 
 type IDist struct {
 	ID   ID

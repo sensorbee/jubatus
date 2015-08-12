@@ -3,7 +3,6 @@ package nearest
 import (
 	"math"
 	"math/big"
-	"pfi/sensorbee/sensorbee/data"
 	"sort"
 )
 
@@ -107,19 +106,15 @@ func (m *Minhash) calcHammingDistance(x, y *big.Int) uint64 {
 func (m *Minhash) hash(v FeatureVector) *big.Int {
 	minValues := generateMinValuesBuffer(m.bitNum)
 	hashes := make([]uint64, m.bitNum)
-	for dim, val := range v {
-		x64, err := data.ToFloat(val)
-		if err != nil {
-			// TODO: remove panic
-			panic(err)
-		}
-		x := float32(x64)
+	for i := range v {
+		dim := v[i].Dim
+		x := v[i].Value
 		keyHash := calcStringHash(dim)
-		for i := 0; i < m.bitNum; i++ {
-			hashVal := calcHash(keyHash, uint64(i), x)
-			if hashVal < minValues[i] {
-				minValues[i] = hashVal
-				hashes[i] = keyHash
+		for j := 0; j < m.bitNum; j++ {
+			hashVal := calcHash(keyHash, uint64(j), x)
+			if hashVal < minValues[j] {
+				minValues[j] = hashVal
+				hashes[j] = keyHash
 			}
 		}
 	}

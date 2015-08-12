@@ -37,7 +37,12 @@ func NewLightLOF(hashNum, nnNum, rnnNum int) (*LightLOF, error) {
 	}, nil
 }
 
-func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
+func (l *LightLOF) Add(v FeatureVector) (id ID, score float32, err error) {
+	nnFV, err := v.toNNFV()
+	if err != nil {
+		return 0, 0, err
+	}
+
 	l.idgen++
 	id = l.idgen
 
@@ -45,10 +50,10 @@ func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
 		l.extend(int(id))
 	}
 
-	l.setRow(id, v)
+	l.setRow(id, nnFV)
 
 	score = l.calcScoreByID(id)
-	return id, score
+	return id, score, nil
 }
 
 // Update does not exist for LightLOF.
@@ -62,16 +67,25 @@ func (l *LightLOF) Overwrite(id ID, v FeatureVector) (score float32, err error) 
 		return 0, errors.New("TODO")
 	}
 
-	l.setRow(id, v)
+	nnFV, err := v.toNNFV()
+	if err != nil {
+		return 0, err
+	}
+
+	l.setRow(id, nnFV)
 
 	score = l.calcScoreByID(id)
 
 	return
 }
 
-func (l *LightLOF) CalcScore(v FeatureVector) float32 {
-	lrd, neighborLRDs := l.collectLRDs(v)
-	return calcLOF(lrd, neighborLRDs)
+func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
+	nnFV, err := v.toNNFV()
+	if err != nil {
+		return 0, err
+	}
+	lrd, neighborLRDs := l.collectLRDs(nnFV)
+	return calcLOF(lrd, neighborLRDs), nil
 }
 
 func (l *LightLOF) calcScoreByID(id ID) float32 {
@@ -88,9 +102,9 @@ func (l *LightLOF) Clear() {
 	// TODO: implement
 }
 
-func (l *LightLOF) setRow(id ID, v FeatureVector) {
+func (l *LightLOF) setRow(id ID, v nearest.FeatureVector) {
 	nnID := nearest.ID(id)
-	l.nn.SetRow(nnID, nearest.FeatureVector(v))
+	l.nn.SetRow(nnID, v)
 
 	neighbors := l.nn.NeighborRowFromID(nnID, l.rnnNum)
 
@@ -124,8 +138,8 @@ func (l *LightLOF) setRow(id ID, v FeatureVector) {
 	}
 }
 
-func (l *LightLOF) collectLRDs(v FeatureVector) (float32, []float32) {
-	neighbors := l.nn.NeighborRowFromFV(nearest.FeatureVector(v), l.nnNum)
+func (l *LightLOF) collectLRDs(v nearest.FeatureVector) (float32, []float32) {
+	neighbors := l.nn.NeighborRowFromFV(v, l.nnNum)
 	if len(neighbors) == 0 {
 		return inf32, nil
 	}
@@ -210,6 +224,23 @@ func calcLOF(lrd float32, neighborLRDs []float32) float32 {
 }
 
 type FeatureVector data.Map
+
+func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
+	ret := make(nearest.FeatureVector, len(v))
+	i := 0
+	for k, v := range v {
+		x, err := data.AsFloat(v)
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = nearest.FeatureElement{
+			Dim:   k,
+			Value: float32(x),
+		}
+		i++
+	}
+	return ret, nil
+}
 
 type ID int64
 
