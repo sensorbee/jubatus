@@ -19,12 +19,22 @@ type LightLOF struct {
 	idgen ID
 }
 
-func NewLightLOF(hashNum, nnNum, rnnNum int) *LightLOF {
+func NewLightLOF(hashNum, nnNum, rnnNum int) (*LightLOF, error) {
+	if hashNum <= 0 {
+		return nil, errors.New("number of hash bits must be greater than zero")
+	}
+	if nnNum <= 1 {
+		return nil, errors.New("number of nearest neighbor must be greater than one")
+	}
+	if rnnNum < nnNum {
+		return nil, errors.New("number of reverse nearest neighbor must be greater than or equal to number of nearest neighbor")
+	}
+
 	return &LightLOF{
 		nn:     nearest.NewMinhash(hashNum),
 		nnNum:  nnNum,
 		rnnNum: rnnNum,
-	}
+	}, nil
 }
 
 func (l *LightLOF) Add(v FeatureVector) (id ID, score float32) {
