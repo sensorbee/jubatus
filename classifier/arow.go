@@ -2,6 +2,9 @@ package classifier
 
 import (
 	"errors"
+	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/intern"
 	"pfi/sensorbee/sensorbee/data"
@@ -101,6 +104,71 @@ func (a *AROW) Clear() {
 	a.intern = intern.New()
 }
 
+var (
+	arowFormatVersion uint8 = 1
+)
+
+type arowMsgpack struct {
+	_struct   struct{} `codec:",toarray"`
+	Model     model
+	RegWeight float32
+}
+
+// Save saves the current state of AROW.
+func (a *AROW) Save(w io.Writer) error {
+	a.m.RLock()
+	defer a.m.RUnlock()
+
+	if _, err := w.Write([]byte{arowFormatVersion}); err != nil {
+		return err
+	}
+
+	enc := codec.NewEncoder(w, classifierMsgpackHandle)
+	if err := enc.Encode(&arowMsgpack{
+		Model:     a.model,
+		RegWeight: a.regWeight,
+	}); err != nil {
+		return err
+	}
+	return a.intern.Save(w)
+}
+
+// TODO: Provide Load which is memory&CPU efficient than the current
+// swapping style load.
+
+// LoadAROW loads AROW from the saved data.
+func LoadAROW(r io.Reader) (*AROW, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadAROWFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of AROW container: %v", formatVersion[0])
+	}
+}
+
+func loadAROWFormatV1(r io.Reader) (*AROW, error) {
+	m := arowMsgpack{}
+	dec := codec.NewDecoder(r, classifierMsgpackHandle)
+	if err := dec.Decode(&m); err != nil {
+		return nil, err
+	}
+	i, err := intern.Load(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AROW{
+		model:     m.Model,
+		intern:    i,
+		regWeight: m.RegWeight,
+	}, nil
+}
+
 // RegWeight returns regularization weight.
 func (a *AROW) RegWeight() float32 {
 	return a.regWeight
@@ -155,16 +223,17 @@ type fVectorForScores []fElement
 // Label represents labels for classification.
 type Label string
 type weight struct {
-	weight     float32
-	covariance float32
+	_struct    struct{} `codec:",toarray"`
+	Weight     float32
+	Covariance float32
 }
 type weights map[dim]weight
 type model map[Label]weights
 
 func initialWeight() weight {
 	return weight{
-		weight:     0,
-		covariance: 1,
+		Weight:     0,
+		Covariance: 1,
 	}
 }
 
@@ -192,25 +261,25 @@ type weightUpdateFunction func(w *weight, alpha, beta, x float32)
 func (w *weight) negativeUpdate(alpha, beta, x float32) {
 	aTerm := w.alphaTerm(alpha, x)
 	bTerm := w.betaTerm(beta, x)
-	w.weight -= aTerm
-	w.covariance -= bTerm
+	w.Weight -= aTerm
+	w.Covariance -= bTerm
 	return
 }
 
 func (w *weight) positiveUpdate(alpha, beta, x float32) {
 	aTerm := w.alphaTerm(alpha, x)
 	bTerm := w.betaTerm(beta, x)
-	w.weight += aTerm
-	w.covariance -= bTerm
+	w.Weight += aTerm
+	w.Covariance -= bTerm
 	return
 }
 
 func (w *weight) alphaTerm(alpha, x float32) float32 {
-	return alpha * w.covariance * x
+	return alpha * w.Covariance * x
 }
 
 func (w *weight) betaTerm(beta, x float32) float32 {
-	conf := w.covariance
+	conf := w.Covariance
 	return beta * conf * conf * x * x
 }
 
@@ -254,7 +323,7 @@ func (s model) scores(v fVectorForScores) LScores {
 	for l, w := range s {
 		var score float32
 		for _, x := range v {
-			score += x.value * w[x.dim].weight
+			score += x.value * w[x.dim].Weight
 		}
 		scores[string(l)] = data.Float(score)
 	}
@@ -277,7 +346,7 @@ func (ws weights) covariance(dim dim) float32 {
 		return 1
 	}
 	if w, ok := ws[dim]; ok {
-		return w.covariance
+		return w.Covariance
 	}
 	return 1
 }

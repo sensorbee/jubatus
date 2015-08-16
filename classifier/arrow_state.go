@@ -3,11 +3,22 @@ package classifier
 import (
 	"errors"
 	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	stdMath "math"
 	"pfi/sensorbee/jubatus/internal/pluginutil"
+	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
 	"pfi/sensorbee/sensorbee/data"
+	"reflect"
 )
+
+// classfierMsgpack has information of the saved file.
+type classifierMsgpack struct {
+	_struct       struct{} `codec:",toarray"`
+	FormatVersion uint8
+	Algorithm     string
+}
 
 // AROWState is a state which support AROW classification algorithm.
 type AROWState struct {
@@ -16,8 +27,22 @@ type AROWState struct {
 	featureVectorField string
 }
 
-// NewAROWState creates a new state for AROW classifier.
-func NewAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+var _ core.SavableSharedState = &AROWState{}
+
+type arowStateMsgpack struct {
+	_struct            struct{} `codec:",toarray"`
+	LabelField         string
+	FeatureVectorField string
+}
+
+// AROWStateCreator is used by BQL to create or load AROWState as a UDS.
+type AROWStateCreator struct {
+}
+
+var _ udf.UDSLoader = &AROWStateCreator{}
+
+// CreateState creates a new state for AROW classifier.
+func (c *AROWStateCreator) CreateState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	label, err := pluginutil.ExtractParamAsStringWithDefault(params, "label_field", "label")
 	if err != nil {
 		return nil, err
@@ -43,10 +68,61 @@ func NewAROWState(ctx *core.Context, params data.Map) (core.SharedState, error) 
 	}, nil
 }
 
+var (
+	classifierMsgpackHandle = &codec.MsgpackHandle{
+		RawToString: true,
+	}
+)
+
+func init() {
+	classifierMsgpackHandle.MapType = reflect.TypeOf(map[string]interface{}{})
+}
+
+// LoadState loads a new state for AROW classifier.
+func (c *AROWStateCreator) LoadState(ctx *core.Context, r io.Reader, params data.Map) (core.SharedState, error) {
+	var d classifierMsgpack
+	dec := codec.NewDecoder(r, classifierMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	if d.Algorithm != "arow" {
+		return nil, fmt.Errorf("unsupported classification algorithm: %v", d.Algorithm)
+	}
+
+	switch d.FormatVersion {
+	case 1:
+		return loadAROWStateFormatV1(ctx, r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of AROWState container: %v", d.FormatVersion)
+	}
+}
+
+func loadAROWStateFormatV1(ctx *core.Context, r io.Reader) (core.SharedState, error) {
+	// This is the current format and no data type conversion is required.
+	s := &AROWState{}
+
+	var d arowStateMsgpack
+	dec := codec.NewDecoder(r, classifierMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	s.labelField = d.LabelField
+	s.featureVectorField = d.FeatureVectorField
+
+	arow, err := LoadAROW(r)
+	if err != nil {
+		return nil, err
+	}
+	s.arow = arow
+	return s, nil
+}
+
+// Terminate terminates the state.
 func (*AROWState) Terminate(ctx *core.Context) error {
 	return nil
 }
 
+// Write trains the machine learning model the state has with a given tuple.
 func (a *AROWState) Write(ctx *core.Context, t *core.Tuple) error {
 	vlabel, ok := t.Data[a.labelField]
 	if !ok {
@@ -74,6 +150,32 @@ func (a *AROWState) train(fv data.Map, l string) error {
 	return a.arow.Train(FeatureVector(fv), Label(l))
 }
 
+const (
+	classifierFormatVersion uint8 = 1
+)
+
+// Save is provided as a part of core.SavableSharedState.
+func (a *AROWState) Save(ctx *core.Context, w io.Writer, params data.Map) error {
+	// This is the format version of the root container and doesn't related to
+	// how each algorithm is saved.
+	enc := codec.NewEncoder(w, classifierMsgpackHandle)
+	if err := enc.Encode(&classifierMsgpack{
+		FormatVersion: classifierFormatVersion,
+		Algorithm:     "arow",
+	}); err != nil {
+		return err
+	}
+
+	if err := enc.Encode(&arowStateMsgpack{
+		LabelField:         a.labelField,
+		FeatureVectorField: a.featureVectorField,
+	}); err != nil {
+		return err
+	}
+	return a.arow.Save(w)
+}
+
+// AROWClassify classifies the input using the given model having stateName.
 func AROWClassify(ctx *core.Context, stateName string, featureVector data.Map) (data.Map, error) {
 	s, err := lookupAROWState(ctx, stateName)
 	if err != nil {
@@ -93,7 +195,7 @@ func lookupAROWState(ctx *core.Context, stateName string) (*AROWState, error) {
 	if s, ok := st.(*AROWState); ok {
 		return s, nil
 	}
-	return nil, fmt.Errorf("state '%v' cannot be converted to AROWState", stateName)
+	return nil, fmt.Errorf("state '%v' isn't an AROWState", stateName)
 }
 
 // ClassifiedLabel returns the label having the highest score in a
