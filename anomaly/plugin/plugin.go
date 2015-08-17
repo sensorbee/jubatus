@@ -11,13 +11,9 @@ import (
 )
 
 func init() {
-	if err := udf.RegisterGlobalUDSCreator("jubaanomaly_light_lof", udf.UDSCreatorFunc(newLightLOFState)); err != nil {
-		panic(err)
-	}
+	udf.MustRegisterGlobalUDSCreator("jubaanomaly_light_lof", udf.UDSCreatorFunc(newLightLOFState))
 
-	if err := udf.RegisterGlobalUDF("jubaanomaly_add_and_get_score", udf.MustConvertGeneric(addAndGetScore)); err != nil {
-		panic(err)
-	}
+	udf.MustRegisterGlobalUDF("jubaanomaly_add_and_get_score", udf.MustConvertGeneric(addAndGetScore))
 }
 
 type lightLOFState struct {
