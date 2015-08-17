@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"io"
-	stdMath "math"
+	"math"
 	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
@@ -254,4 +254,4 @@ func maxLabelScore(scores data.Map) (label string, score float64, err error) {
 	return label, score, nil
 }
 
-var minusInf = stdMath.Inf(-1)
+var minusInf = math.Inf(-1)
