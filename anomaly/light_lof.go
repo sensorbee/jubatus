@@ -23,10 +23,10 @@ type LightLOF struct {
 }
 
 const (
-	LSH = iota
+	InvalidNNAlgorithm = iota
+	LSH
 	Minhash
 	EuclidLSH
-	InvalidNNAlgorithm
 )
 
 type NNAlgorithm int
