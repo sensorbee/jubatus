@@ -2,6 +2,9 @@ package regression
 
 import (
 	"errors"
+	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	"math"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
@@ -93,6 +96,76 @@ func (pa *PassiveAggressive) Clear() {
 	pa.sum = 0
 	pa.sqSum = 0
 	pa.count = 0
+}
+
+const (
+	paForwatVersion = 1
+)
+
+type paMsgpack struct {
+	_struct struct{} `codec:",toarray"`
+
+	Model model
+	Sum   float32
+	SqSum float32
+	Count uint64
+
+	RegWeight   float32
+	Sensitivity float32
+}
+
+// Save saves the current state of PassiveAggressive.
+func (pa *PassiveAggressive) Save(w io.Writer) error {
+	pa.m.RLock()
+	defer pa.m.RUnlock()
+
+	if _, err := w.Write([]byte{paForwatVersion}); err != nil {
+		return err
+	}
+
+	enc := codec.NewEncoder(w, regressionMsgpackHandle)
+	err := enc.Encode(&paMsgpack{
+		Model:       pa.model,
+		Sum:         pa.sum,
+		SqSum:       pa.sqSum,
+		Count:       pa.count,
+		RegWeight:   pa.regWeight,
+		Sensitivity: pa.sensitivity,
+	})
+	return err
+}
+
+// LoadPassiveAggressive loads PassiveAggressive from the saved data.
+func LoadPassiveAggressive(r io.Reader) (*PassiveAggressive, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadPassiveAggressiveFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of PassiveAggressive container: %v", formatVersion[0])
+	}
+}
+
+func loadPassiveAggressiveFormatV1(r io.Reader) (*PassiveAggressive, error) {
+	m := paMsgpack{}
+	dec := codec.NewDecoder(r, regressionMsgpackHandle)
+	if err := dec.Decode(&m); err != nil {
+		return nil, err
+	}
+
+	return &PassiveAggressive{
+		model: m.Model,
+		sum:   m.Sum,
+		sqSum: m.SqSum,
+		count: m.Count,
+
+		regWeight:   m.RegWeight,
+		sensitivity: m.Sensitivity,
+	}, nil
 }
 
 // RegWeight returns regularization weight.

@@ -3,10 +3,21 @@ package regression
 import (
 	"errors"
 	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	"pfi/sensorbee/jubatus/internal/pluginutil"
+	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
 	"pfi/sensorbee/sensorbee/data"
+	"reflect"
 )
+
+// regressionMsgpack has information of the saved file.
+type regressionMsgpack struct {
+	_struct       struct{} `codec:",toarray"`
+	FormatVersion uint8
+	Algorithm     string
+}
 
 type PassiveAggressiveState struct {
 	pa                 *PassiveAggressive
@@ -14,7 +25,21 @@ type PassiveAggressiveState struct {
 	featureVectorField string
 }
 
-func NewPassiveAggressiveState(ctx *core.Context, params data.Map) (core.SharedState, error) {
+var _ core.SavableSharedState = &PassiveAggressiveState{}
+
+type paStateMsgpack struct {
+	_struct            struct{} `codec:",toarray"`
+	ValueField         string
+	FeatureVectorField string
+}
+
+// PassiveAggressiveStateCreator is used by BQL to create PassiveAggressiveState as a UDS.
+type PassiveAggressiveStateCreator struct {
+}
+
+var _ udf.UDSLoader = &PassiveAggressiveStateCreator{}
+
+func (c *PassiveAggressiveStateCreator) CreateState(ctx *core.Context, params data.Map) (core.SharedState, error) {
 	value, err := pluginutil.ExtractParamAsStringWithDefault(params, "value_field", "value")
 	if err != nil {
 		return nil, err
@@ -52,6 +77,54 @@ func NewPassiveAggressiveState(ctx *core.Context, params data.Map) (core.SharedS
 	}, nil
 }
 
+var (
+	regressionMsgpackHandle = &codec.MsgpackHandle{
+		RawToString: true,
+	}
+)
+
+func init() {
+	regressionMsgpackHandle.MapType = reflect.TypeOf(map[string]interface{}{})
+}
+
+// LoadState loads a new state for PassiveAggressive model.
+func (c *PassiveAggressiveStateCreator) LoadState(ctx *core.Context, r io.Reader, params data.Map) (core.SharedState, error) {
+	var d regressionMsgpack
+	dec := codec.NewDecoder(r, regressionMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	if d.Algorithm != "passive_aggressive" {
+		return nil, fmt.Errorf("unsupported regression algorithm: %v", d.Algorithm)
+	}
+
+	switch d.FormatVersion {
+	case 1:
+		return loadPassiveAggressiveStateFormatV1(ctx, r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of PassiveAggressiveState container: %v", d.FormatVersion)
+	}
+}
+
+func loadPassiveAggressiveStateFormatV1(ctx *core.Context, r io.Reader) (core.SharedState, error) {
+	s := &PassiveAggressiveState{}
+
+	var d paStateMsgpack
+	dec := codec.NewDecoder(r, regressionMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	s.valueField = d.ValueField
+	s.featureVectorField = d.FeatureVectorField
+
+	pa, err := LoadPassiveAggressive(r)
+	if err != nil {
+		return nil, err
+	}
+	s.pa = pa
+	return s, nil
+}
+
 func (*PassiveAggressiveState) Terminate(ctx *core.Context) error {
 	return nil
 }
@@ -78,6 +151,29 @@ func (pa *PassiveAggressiveState) Write(ctx *core.Context, t *core.Tuple) error 
 
 	err = pa.pa.Train(FeatureVector(fv), val)
 	return err
+}
+
+const (
+	regressionFormatVersion = 1
+)
+
+// Save is provided as a part of core.SavableSharedState.
+func (pa *PassiveAggressiveState) Save(ctx *core.Context, w io.Writer, params data.Map) error {
+	enc := codec.NewEncoder(w, regressionMsgpackHandle)
+	if err := enc.Encode(&regressionMsgpack{
+		FormatVersion: regressionFormatVersion,
+		Algorithm:     "passive_aggressive",
+	}); err != nil {
+		return err
+	}
+
+	if err := enc.Encode(&paStateMsgpack{
+		ValueField:         pa.valueField,
+		FeatureVectorField: pa.featureVectorField,
+	}); err != nil {
+		return err
+	}
+	return pa.pa.Save(w)
 }
 
 func PassiveAggressiveEstimate(ctx *core.Context, stateName string, featureVector data.Map) (float32, error) {
