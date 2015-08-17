@@ -52,6 +52,9 @@ func (c *AROWStateCreator) CreateState(ctx *core.Context, params data.Map) (core
 		return nil, err
 	}
 	rw, err := pluginutil.ExtractParamAndConvertToFloat(params, "regularization_weight")
+	if err != nil {
+		return nil, err
+	}
 	if rw <= 0 {
 		return nil, errors.New("regularization_weight parameter must be greater than zero")
 	}
