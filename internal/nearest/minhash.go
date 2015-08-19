@@ -7,14 +7,12 @@ import (
 )
 
 type Minhash struct {
-	bitNum int
-	data   *bitvector.Array
+	data *bitvector.Array
 }
 
 func NewMinhash(bitNum int) *Minhash {
 	return &Minhash{
-		bitNum: bitNum,
-		data:   bitvector.NewArray(bitNum),
+		data: bitvector.NewArray(bitNum),
 	}
 }
 
@@ -57,7 +55,7 @@ func (m *Minhash) rankingHammingBitVectors(bv *bitvector.Vector, size int) []IDi
 	for i := range ret {
 		ret[i] = IDist{
 			ID:   buf[i].ID,
-			Dist: buf[i].Dist / float32(m.bitNum),
+			Dist: buf[i].Dist / float32(m.data.BitNum()),
 		}
 	}
 	return ret
@@ -78,13 +76,14 @@ func (s sortByDist) Swap(i, j int) {
 }
 
 func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
-	minValues := generateMinValuesBuffer(m.bitNum)
-	hashes := make([]uint64, m.bitNum)
+	bitNum := m.data.BitNum()
+	minValues := generateMinValuesBuffer(bitNum)
+	hashes := make([]uint64, bitNum)
 	for i := range v {
 		dim := v[i].Dim
 		x := v[i].Value
 		keyHash := calcStringHash(dim)
-		for j := 0; j < m.bitNum; j++ {
+		for j := 0; j < bitNum; j++ {
 			hashVal := calcHash(keyHash, uint64(j), x)
 			if hashVal < minValues[j] {
 				minValues[j] = hashVal
@@ -93,7 +92,7 @@ func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
 		}
 	}
 
-	bv := bitvector.NewVector(m.bitNum)
+	bv := bitvector.NewVector(bitNum)
 	for i := 0; i < len(hashes); i++ {
 		if (hashes[i] & 1) == 1 {
 			bv.Set(i)
