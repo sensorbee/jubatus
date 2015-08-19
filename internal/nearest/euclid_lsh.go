@@ -2,14 +2,14 @@ package nearest
 
 import (
 	"math"
-	"math/big"
 	"math/rand"
+	"pfi/sensorbee/jubatus/internal/math/bitvector"
 	"sort"
 )
 
 type EuclidLSH struct {
 	hashNum int
-	lshs    []*big.Int
+	lshs    *bitvector.Array
 	norms   []float32
 	ndata   int
 }
@@ -17,31 +17,32 @@ type EuclidLSH struct {
 func NewEuclidLSH(hashNum int) *EuclidLSH {
 	return &EuclidLSH{
 		hashNum: hashNum,
+		lshs:    bitvector.NewArray(hashNum),
 	}
 }
 
 func (e *EuclidLSH) SetRow(id ID, v FeatureVector) {
 	e.ndata = maxInt(e.ndata, int(id))
-	if len(e.lshs) < int(id) {
+	if len(e.norms) < int(id) {
 		e.extend(int(id))
 	}
 
-	e.lshs[id-1] = cosineLSH(v, e.hashNum)
+	e.lshs.Set(int(id-1), cosineLSH(v, e.hashNum))
 	e.norms[id-1] = l2Norm(v)
 }
 
 func (e *EuclidLSH) NeighborRowFromID(id ID, size int) []IDist {
-	return e.neighborRowFromHash(e.lshs[id-1], e.norms[id-1], size)
+	return e.neighborRowFromHash(e.lshs.Get(int(id-1)), e.norms[id-1], size)
 }
 
 func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 	return e.neighborRowFromHash(cosineLSH(v, e.hashNum), l2Norm(v), size)
 }
 
-func (e *EuclidLSH) neighborRowFromHash(x *big.Int, norm float32, size int) []IDist {
+func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size int) []IDist {
 	buf := make([]IDist, e.ndata)
 	for i := 0; i < e.ndata; i++ {
-		hDist := calcHammingDistance(x, e.lshs[i])
+		hDist := bitvector.HammingDistance(x, e.lshs.Get(i))
 		theta := float64(hDist) * math.Pi / float64(e.hashNum)
 		score := e.norms[i] * (e.norms[i] - 2*norm*float32(math.Cos(theta)))
 		buf[i] = IDist{
@@ -67,16 +68,14 @@ func (e *EuclidLSH) GetAllRows() []ID {
 }
 
 func (e *EuclidLSH) extend(n int) {
-	len := maxInt(2*len(e.lshs), n)
-	lshs := make([]*big.Int, len)
+	len := maxInt(2*len(e.norms), n)
+	e.lshs.Resize(len)
 	norms := make([]float32, len)
-	copy(lshs, e.lshs)
 	copy(norms, e.norms)
-	e.lshs = lshs
 	e.norms = norms
 }
 
-func cosineLSH(v FeatureVector, hashNum int) *big.Int {
+func cosineLSH(v FeatureVector, hashNum int) *bitvector.Vector {
 	return binarize(randomProjection(v, hashNum))
 }
 
@@ -96,14 +95,12 @@ func randomProjection(v FeatureVector, hashNum int) []float32 {
 	return proj
 }
 
-func binarize(proj []float32) *big.Int {
-	ret := big.NewInt(0)
-	bit := big.NewInt(1)
-	for _, x := range proj {
+func binarize(proj []float32) *bitvector.Vector {
+	ret := bitvector.NewVector(len(proj))
+	for i, x := range proj {
 		if x > 0 {
-			ret.Or(ret, bit)
+			ret.Set(i)
 		}
-		bit.Lsh(bit, 1)
 	}
 	return ret
 }

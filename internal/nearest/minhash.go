@@ -2,39 +2,38 @@ package nearest
 
 import (
 	"math"
-	"math/big"
+	"pfi/sensorbee/jubatus/internal/math/bitvector"
 	"sort"
 )
 
 type Minhash struct {
 	bitNum int
-	data   []*big.Int
-	ndata  int
+	data   *bitvector.Array
 }
 
 func NewMinhash(bitNum int) *Minhash {
 	return &Minhash{
 		bitNum: bitNum,
+		data:   bitvector.NewArray(bitNum),
 	}
 }
 
 func (m *Minhash) SetRow(id ID, v FeatureVector) {
-	m.ndata = maxInt(m.ndata, int(id))
-	if len(m.data) < int(id) {
-		m.extend(int(id))
+	if int(id) > m.data.Len() {
+		m.data.Resize(int(id))
 	}
-	m.data[id-1] = m.hash(v)
+	m.data.Set(int(id-1), m.hash(v))
 }
 
 func (m *Minhash) NeighborRowFromID(id ID, size int) []IDist {
-	return m.neighborRowFromHash(m.data[id-1], size)
+	return m.neighborRowFromHash(m.data.Get(int(id-1)), size)
 }
 
 func (m *Minhash) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 	return m.neighborRowFromHash(m.hash(v), size)
 }
 
-func (m *Minhash) neighborRowFromHash(x *big.Int, size int) []IDist {
+func (m *Minhash) neighborRowFromHash(x *bitvector.Vector, size int) []IDist {
 	return m.rankingHammingBitVectors(x, size)
 }
 
@@ -43,25 +42,19 @@ func (m *Minhash) GetAllRows() []ID {
 	return nil
 }
 
-func (m *Minhash) extend(n int) {
-	len := maxInt(2*len(m.data), n)
-	data := make([]*big.Int, len)
-	copy(data, m.data)
-	m.data = data
-}
-
-func (m *Minhash) rankingHammingBitVectors(bv *big.Int, size int) []IDist {
-	buf := make([]IDist, m.ndata)
-	for i := 0; i < m.ndata; i++ {
-		dist := calcHammingDistance(bv, m.data[i])
+func (m *Minhash) rankingHammingBitVectors(bv *bitvector.Vector, size int) []IDist {
+	len := m.data.Len()
+	buf := make([]IDist, len)
+	for i := 0; i < len; i++ {
+		dist := bitvector.HammingDistance(bv, m.data.Get(i))
 		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: float32(dist),
 		}
 	}
 	sort.Sort(sortByDist(buf))
-	ret := make([]IDist, minInt(size, len(buf)))
-	for i := 0; i < len(ret); i++ {
+	ret := make([]IDist, minInt(size, len))
+	for i := range ret {
 		ret[i] = IDist{
 			ID:   buf[i].ID,
 			Dist: buf[i].Dist / float32(m.bitNum),
@@ -84,29 +77,7 @@ func (s sortByDist) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func calcHammingDistance(x, y *big.Int) uint64 {
-	xb := x.Bits()
-	yb := y.Bits()
-
-	minLen := len(yb)
-	maxLen := len(xb)
-	if len(xb) < len(yb) {
-		xb, yb = yb, xb
-		minLen, maxLen = maxLen, minLen
-	}
-
-	var ret uint64
-	for i := 0; i < minLen; i++ {
-		ret += bitcount(xb[i] ^ yb[i])
-	}
-	for i := minLen; i < maxLen; i++ {
-		ret += bitcount(xb[i])
-	}
-
-	return ret
-}
-
-func (m *Minhash) hash(v FeatureVector) *big.Int {
+func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
 	minValues := generateMinValuesBuffer(m.bitNum)
 	hashes := make([]uint64, m.bitNum)
 	for i := range v {
@@ -122,14 +93,13 @@ func (m *Minhash) hash(v FeatureVector) *big.Int {
 		}
 	}
 
-	bv := big.NewInt(0)
-	bit := big.NewInt(1)
+	bv := bitvector.NewVector(m.bitNum)
 	for i := 0; i < len(hashes); i++ {
 		if (hashes[i] & 1) == 1 {
-			bv.Or(bv, bit)
+			bv.Set(i)
 		}
-		bit.Lsh(bit, 1)
 	}
+
 	return bv
 }
 
@@ -231,13 +201,4 @@ func maxInt(x, y int) int {
 		return y
 	}
 	return x
-}
-
-func bitcount(x big.Word) uint64 {
-	var ret uint64
-	for x != 0 {
-		ret++
-		x &= x - 1
-	}
-	return ret
 }
