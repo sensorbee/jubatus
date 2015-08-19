@@ -44,6 +44,10 @@ func (a *Array) cap() int {
 	return len(a.data) * wordBits / a.bitNum
 }
 
+func (a *Array) BitNum() int {
+	return a.bitNum
+}
+
 func (a *Array) Get(n int) *Vector {
 	if n < 0 || n >= a.len {
 		panic("TODO: fix")
