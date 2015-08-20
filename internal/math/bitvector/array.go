@@ -1,8 +1,5 @@
 package bitvector
 
-type word uintptr
-type buf []word
-
 type Array struct {
 	data   buf
 	bitNum int

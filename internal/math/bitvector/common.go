@@ -1,5 +1,8 @@
 package bitvector
 
+type word uintptr
+type buf []word
+
 func nWords(bitNum, len int) int {
 	return (bitNum*len + wordBits - 1) / wordBits
 }
