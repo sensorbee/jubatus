@@ -1,6 +1,7 @@
 package bitvector
 
 import (
+	"bytes"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
@@ -251,4 +252,31 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestArraySaveLoad(t *testing.T) {
+	a := NewArray(10)
+	a.Resize(10)
+	for i := 0; i < a.Len(); i++ {
+		v := NewVector(10)
+		v.Set(i)
+		a.Set(i, v)
+	}
+
+	Convey("Given an Array", t, func() {
+		Convey("when saving it", func() {
+			buf := bytes.NewBuffer(nil)
+			err := a.Save(buf)
+
+			Convey("it should succeed", func() {
+				So(err, ShouldBeNil)
+
+				Convey("and the data should be loaded", func() {
+					a2, err := LoadArray(buf)
+					So(err, ShouldBeNil)
+					So(a2, ShouldResemble, a)
+				})
+			})
+		})
+	})
 }

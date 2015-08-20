@@ -1,9 +1,22 @@
 package bitvector
 
+import (
+	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
+)
+
 type Array struct {
 	data   buf
 	bitNum int
 	len    int
+}
+
+type arrayData struct {
+	_struct struct{} `codec",toarray"`
+	Data    buf
+	BitNum  int
+	Len     int
 }
 
 func NewArray(bitNum int) *Array {
@@ -213,4 +226,55 @@ func (a *Array) HammingDistance(n int, y *Vector) int {
 		}
 	}
 	return ret
+}
+
+const (
+	arrayFormatVersion = 1
+)
+
+var arrayMsgpackHandle = &codec.MsgpackHandle{
+	RawToString: true,
+}
+
+func (a *Array) Save(w io.Writer) error {
+	if _, err := w.Write([]byte{arrayFormatVersion}); err != nil {
+		return err
+	}
+
+	enc := codec.NewEncoder(w, arrayMsgpackHandle)
+	if err := enc.Encode(&arrayData{
+		Data:   a.data,
+		BitNum: a.bitNum,
+		Len:    a.len,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func LoadArray(r io.Reader) (*Array, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadArrayFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of Array: %v", formatVersion[0])
+	}
+}
+
+func loadArrayFormatV1(r io.Reader) (*Array, error) {
+	var d arrayData
+	dec := codec.NewDecoder(r, arrayMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	return &Array{
+		data:   d.Data,
+		bitNum: d.BitNum,
+		len:    d.Len,
+	}, nil
 }
