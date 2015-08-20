@@ -86,19 +86,24 @@ func (a *Array) Get(n int) *Vector {
 
 	retLen := nWords(a.bitNum, 1)
 	retBuf := make(buf, retLen)
-	copy(retBuf, a.data[l+1:])
+
 	leftOffset := lbit % wordBits
-	leftBits := a.data[l] << uint(leftOffset)
 	nLeftBits := wordBits - leftOffset
+	leftBits := a.data[l] >> uint(leftOffset)
+	nRightBits := rbit % wordBits
 	nTrailingBits := a.bitNum % wordBits
-	if nLeftBits <= nTrailingBits {
-		nRightBits := nTrailingBits - nLeftBits
-		retBuf[retLen-1] &= leastBits(nRightBits)
-		set(&retBuf[retLen-1], nRightBits, leftBits, nLeftBits)
+	copy(retBuf, a.data[l+1:r])
+	if nRightBits == 0 {
+		retBuf[retLen-1] = leftBits
 	} else {
-		nLast2Bits := nLeftBits - nTrailingBits
-		set(&retBuf[retLen-2], wordBits-nLast2Bits, leftBits, nLast2Bits)
-		retBuf[retLen-1] = leftBits << uint(nLast2Bits)
+		if nLeftBits+nRightBits <= wordBits {
+			set(&retBuf[retLen-1], 0, a.data[r], nRightBits)
+			set(&retBuf[retLen-1], nRightBits, leftBits, nLeftBits)
+		} else {
+			set(&retBuf[retLen-2], 0, a.data[r], nRightBits)
+			set(&retBuf[retLen-2], nRightBits, leftBits, wordBits-nRightBits)
+			set(&retBuf[retLen-1], 0, leftBits>>uint(wordBits-nRightBits), nTrailingBits)
+		}
 	}
 
 	return &Vector{
@@ -146,13 +151,13 @@ func (a *Array) Set(n int, v *Vector) {
 	len := len(v.data)
 	if leftNBits < bitNumRes {
 		set(&a.data[r], 0, v.data[len-1], rightNBits)
-		set(&a.data[l], lOffset, v.data[len-1]<<uint(rightNBits), leftNBits)
+		set(&a.data[l], lOffset, v.data[len-1]>>uint(rightNBits), leftNBits)
 	} else if leftNBits == bitNumRes {
 		// this condition means rbit%wordBits == 0
 		set(&a.data[l], lOffset, v.data[len-1], leftNBits)
 	} else {
 		set(&a.data[r], 0, v.data[len-2], rightNBits)
-		set(&a.data[l], lOffset, v.data[len-2]<<uint(rightNBits), wordBits-rightNBits)
+		set(&a.data[l], lOffset, v.data[len-2]>>uint(rightNBits), wordBits-rightNBits)
 		set(&a.data[l], wordBits-bitNumRes, v.data[len-1], bitNumRes)
 	}
 }
