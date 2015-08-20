@@ -1,6 +1,8 @@
 package bitvector
 
-type word uintptr
+// word is uint64 for serialization.
+// This may be changed to uintptr.
+type word uint64
 type buf []word
 
 func nWords(bitNum, len int) int {
