@@ -44,7 +44,7 @@ func (m *Minhash) rankingHammingBitVectors(bv *bitvector.Vector, size int) []IDi
 	len := m.data.Len()
 	buf := make([]IDist, len)
 	for i := 0; i < len; i++ {
-		dist := bitvector.HammingDistance(bv, m.data.Get(i))
+		dist := m.data.HammingDistance(i, bv)
 		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: float32(dist),

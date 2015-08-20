@@ -161,3 +161,56 @@ func (a *Array) Set(n int, v *Vector) {
 		set(&a.data[l], wordBits-bitNumRes, v.data[len-1], bitNumRes)
 	}
 }
+
+func (a *Array) HammingDistance(n int, y *Vector) int {
+	if a.bitNum != y.bitNum {
+		panic("TODO: fix")
+	}
+
+	lbit := n * a.bitNum
+	rbit := lbit + a.bitNum
+	l := lbit / wordBits
+	r := rbit / wordBits
+
+	nRightBits := rbit % wordBits
+
+	if l == r || (l+1 == r && nRightBits == 0) {
+		offset := lbit % wordBits
+		x := (a.data[l] >> uint(offset)) & leastBits(a.bitNum)
+		return bitcount(x ^ word(y.GetAsUint64(0)))
+	}
+
+	if lbit%wordBits == 0 {
+		x := a.data[l:]
+		ret := 0
+		for i := 0; i < r-l; i++ {
+			ret += bitcount(x[i] ^ y.data[i])
+		}
+		if nRightBits != 0 {
+			last := r - l
+			ret += bitcount((x[last] & leastBits(nRightBits)) ^ y.data[last])
+		}
+		return ret
+	}
+
+	leftOffset := lbit % wordBits
+	nLeftBits := (wordBits - leftOffset)
+	leftBits := a.data[l] >> uint(leftOffset)
+	ret := 0
+	nfull := r - (l + 1)
+	x := a.data[l+1 : r]
+	for i := 0; i < nfull; i++ {
+		ret += bitcount(x[i] ^ y.data[i])
+	}
+	if nRightBits == 0 {
+		ret += bitcount(leftBits ^ y.data[nfull])
+	} else {
+		x := (a.data[r] & leastBits(nRightBits)) | (leftBits << uint(nRightBits))
+		ret += bitcount(x ^ y.data[nfull])
+		if nLeftBits+nRightBits > wordBits {
+			x := leftBits >> uint(wordBits-nRightBits)
+			ret += bitcount(x ^ y.data[nfull+1])
+		}
+	}
+	return ret
+}
