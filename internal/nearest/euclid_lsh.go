@@ -10,7 +10,6 @@ import (
 type EuclidLSH struct {
 	lshs  *bitvector.Array
 	norms []float32
-	ndata int
 }
 
 func NewEuclidLSH(hashNum int) *EuclidLSH {
@@ -20,7 +19,6 @@ func NewEuclidLSH(hashNum int) *EuclidLSH {
 }
 
 func (e *EuclidLSH) SetRow(id ID, v FeatureVector) {
-	e.ndata = maxInt(e.ndata, int(id))
 	if len(e.norms) < int(id) {
 		e.extend(int(id))
 	}
@@ -38,8 +36,8 @@ func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 }
 
 func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size int) []IDist {
-	buf := make([]IDist, e.ndata)
-	for i := 0; i < e.ndata; i++ {
+	buf := make([]IDist, len(e.norms))
+	for i := range buf {
 		hDist := e.lshs.HammingDistance(i, x)
 		theta := float64(hDist) * math.Pi / float64(e.lshs.BitNum())
 		score := e.norms[i] * (e.norms[i] - 2*norm*float32(math.Cos(theta)))
@@ -66,11 +64,16 @@ func (e *EuclidLSH) GetAllRows() []ID {
 }
 
 func (e *EuclidLSH) extend(n int) {
-	len := maxInt(2*len(e.norms), n)
-	e.lshs.Resize(len)
-	norms := make([]float32, len)
-	copy(norms, e.norms)
-	e.norms = norms
+	if e.lshs.Len() < n {
+		e.lshs.Resize(n)
+		if cap(e.norms) >= n {
+			e.norms = e.norms[0:n]
+		} else {
+			newNorms := make([]float32, n, maxInt(2*cap(e.norms), n))
+			copy(newNorms, e.norms)
+			e.norms = newNorms
+		}
+	}
 }
 
 func cosineLSH(v FeatureVector, hashNum int) *bitvector.Vector {
