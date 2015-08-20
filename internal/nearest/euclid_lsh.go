@@ -8,16 +8,14 @@ import (
 )
 
 type EuclidLSH struct {
-	hashNum int
-	lshs    *bitvector.Array
-	norms   []float32
-	ndata   int
+	lshs  *bitvector.Array
+	norms []float32
+	ndata int
 }
 
 func NewEuclidLSH(hashNum int) *EuclidLSH {
 	return &EuclidLSH{
-		hashNum: hashNum,
-		lshs:    bitvector.NewArray(hashNum),
+		lshs: bitvector.NewArray(hashNum),
 	}
 }
 
@@ -27,7 +25,7 @@ func (e *EuclidLSH) SetRow(id ID, v FeatureVector) {
 		e.extend(int(id))
 	}
 
-	e.lshs.Set(int(id-1), cosineLSH(v, e.hashNum))
+	e.lshs.Set(int(id-1), cosineLSH(v, e.lshs.BitNum()))
 	e.norms[id-1] = l2Norm(v)
 }
 
@@ -36,14 +34,14 @@ func (e *EuclidLSH) NeighborRowFromID(id ID, size int) []IDist {
 }
 
 func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
-	return e.neighborRowFromHash(cosineLSH(v, e.hashNum), l2Norm(v), size)
+	return e.neighborRowFromHash(cosineLSH(v, e.lshs.BitNum()), l2Norm(v), size)
 }
 
 func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size int) []IDist {
 	buf := make([]IDist, e.ndata)
 	for i := 0; i < e.ndata; i++ {
 		hDist := e.lshs.HammingDistance(i, x)
-		theta := float64(hDist) * math.Pi / float64(e.hashNum)
+		theta := float64(hDist) * math.Pi / float64(e.lshs.BitNum())
 		score := e.norms[i] * (e.norms[i] - 2*norm*float32(math.Cos(theta)))
 		buf[i] = IDist{
 			ID:   ID(i + 1),
