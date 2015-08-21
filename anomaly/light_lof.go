@@ -178,32 +178,6 @@ func (l *LightLOF) add(v nearest.FeatureVector) ID {
 	return id
 }
 
-// Update does not exist for LightLOF.
-// func (l *LightLOF) Update(id ID, v FeatureVector) float32
-
-func (l *LightLOF) Overwrite(id ID, v FeatureVector) (score float32, err error) {
-	if id <= 0 {
-		return 0, fmt.Errorf("invalid id %d", id)
-	}
-	if id > l.idgen {
-		return 0, errors.New("TODO")
-	}
-
-	nnFV, err := v.toNNFV()
-	if err != nil {
-		return 0, err
-	}
-
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	l.setRow(id, nnFV)
-
-	score = l.calcScoreByID(id)
-
-	return
-}
-
 func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
 	nnFV, err := v.toNNFV()
 	if err != nil {
