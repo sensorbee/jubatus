@@ -280,7 +280,7 @@ func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
 	ret := make(nearest.FeatureVector, len(v))
 	i := 0
 	for k, v := range v {
-		x, err := data.AsFloat(v)
+		x, err := data.ToFloat(v)
 		if err != nil {
 			return nil, err
 		}
