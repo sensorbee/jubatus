@@ -19,8 +19,6 @@ type LightLOF struct {
 	kdists []float32
 	lrds   []float32
 
-	idgen ID
-
 	m sync.RWMutex
 }
 
@@ -75,8 +73,6 @@ type lightLOFMsgpack struct {
 
 	KDists []float32
 	LRDs   []float32
-
-	IDGen ID
 }
 
 func (l *LightLOF) Save(w io.Writer) error {
@@ -94,8 +90,6 @@ func (l *LightLOF) Save(w io.Writer) error {
 
 		KDists: l.kdists,
 		LRDs:   l.lrds,
-
-		IDGen: l.idgen,
 	}); err != nil {
 		return err
 	}
@@ -134,8 +128,6 @@ func loadLightLOFFormatV1(r io.Reader) (*LightLOF, error) {
 
 		kdists: m.KDists,
 		lrds:   m.LRDs,
-
-		idgen: m.IDGen,
 	}, nil
 }
 
@@ -166,16 +158,11 @@ func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) (ID, error) {
 }
 
 func (l *LightLOF) add(v nearest.FeatureVector) ID {
-	l.idgen++
-	id := l.idgen
+	l.kdists = append(l.kdists, 0)
+	l.lrds = append(l.lrds, 0)
+	l.setRow(v)
 
-	if len(l.kdists) < int(id) {
-		l.extend(int(id))
-	}
-
-	l.setRow(id, v)
-
-	return id
+	return ID(len(l.kdists))
 }
 
 func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
@@ -205,8 +192,8 @@ func (l *LightLOF) Clear() {
 	// TODO: implement
 }
 
-func (l *LightLOF) setRow(id ID, v nearest.FeatureVector) {
-	nnID := nearest.ID(id)
+func (l *LightLOF) setRow(v nearest.FeatureVector) {
+	nnID := nearest.ID(len(l.kdists))
 	l.nn.SetRow(nnID, v)
 
 	neighbors := l.nn.NeighborRowFromID(nnID, l.rnnNum)
@@ -293,12 +280,6 @@ func (l *LightLOF) collectLRDsImpl(neighbors []nearest.IDist) (float32, []float3
 	}
 
 	return float32(len(neighbors)) / sumReachability, neighborLRDs
-}
-
-func (l *LightLOF) extend(n int) {
-	n = maxInt(2*len(l.kdists), n)
-	l.kdists = realloc(l.kdists, n)
-	l.lrds = realloc(l.lrds, n)
 }
 
 func realloc(s []float32, n int) []float32 {
