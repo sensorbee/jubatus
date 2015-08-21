@@ -1,6 +1,8 @@
 package nearest
 
 import (
+	"fmt"
+	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/math/bitvector"
 	"sort"
@@ -10,10 +12,47 @@ type Minhash struct {
 	data *bitvector.Array
 }
 
+const (
+	minhashFormatVersion = 1
+)
+
 func NewMinhash(bitNum int) *Minhash {
 	return &Minhash{
 		data: bitvector.NewArray(bitNum),
 	}
+}
+
+func (m *Minhash) name() string {
+	return "minhash"
+}
+
+func (m *Minhash) save(w io.Writer) error {
+	if _, err := w.Write([]byte{minhashFormatVersion}); err != nil {
+		return err
+	}
+	return m.data.Save(w)
+}
+
+func loadMinhash(r io.Reader) (*Minhash, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadMinhashFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of minhash container: %v", formatVersion[0])
+	}
+}
+
+func loadMinhashFormatV1(r io.Reader) (*Minhash, error) {
+	data, err := bitvector.LoadArray(r)
+	if err != nil {
+		return nil, err
+	}
+	return &Minhash{data}, nil
 }
 
 func (m *Minhash) SetRow(id ID, v FeatureVector) {

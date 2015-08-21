@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	udf.MustRegisterGlobalUDSCreator("jubaanomaly_light_lof", udf.UDSCreatorFunc(anomaly.NewLightLOFState))
+	udf.MustRegisterGlobalUDSCreator("jubaanomaly_light_lof", &anomaly.LightLOFStateCreator{})
 
 	udf.MustRegisterGlobalUDF("jubaanomaly_add_and_get_score", udf.MustConvertGeneric(anomaly.AddAndGetScore))
 }

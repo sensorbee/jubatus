@@ -1,6 +1,9 @@
 package nearest
 
 import (
+	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	"math"
 	"math/rand"
 	"pfi/sensorbee/jubatus/internal/math/bitvector"
@@ -12,10 +15,65 @@ type EuclidLSH struct {
 	norms []float32
 }
 
+type euclidLSHMsgpack struct {
+	_struct       struct{} `codec:",toarray"`
+	FormatVersion uint8
+	Norms         []float32
+}
+
+const (
+	euclidLSHFormatVersion = 1
+)
+
 func NewEuclidLSH(hashNum int) *EuclidLSH {
 	return &EuclidLSH{
 		lshs: bitvector.NewArray(hashNum),
 	}
+}
+
+func (e *EuclidLSH) name() string {
+	return "euclid_lsh"
+}
+
+func (e *EuclidLSH) save(w io.Writer) error {
+	enc := codec.NewEncoder(w, nnMsgpackHandle)
+	if err := enc.Encode(&euclidLSHMsgpack{
+		FormatVersion: euclidLSHFormatVersion,
+		Norms:         e.norms,
+	}); err != nil {
+		return err
+	}
+	return e.lshs.Save(w)
+}
+
+func loadEuclidLSH(r io.Reader) (*EuclidLSH, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadEuclidLSHFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of euclid_lsh container: %v", formatVersion[0])
+	}
+}
+
+func loadEuclidLSHFormatV1(r io.Reader) (*EuclidLSH, error) {
+	var d euclidLSHMsgpack
+	dec := codec.NewDecoder(r, nnMsgpackHandle)
+	if err := dec.Decode(&d); err != nil {
+		return nil, err
+	}
+	lshs, err := bitvector.LoadArray(r)
+	if err != nil {
+		return nil, err
+	}
+	return &EuclidLSH{
+		lshs:  lshs,
+		norms: d.Norms,
+	}, nil
 }
 
 func (e *EuclidLSH) SetRow(id ID, v FeatureVector) {

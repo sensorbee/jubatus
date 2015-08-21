@@ -3,6 +3,8 @@ package anomaly
 import (
 	"errors"
 	"fmt"
+	"github.com/ugorji/go/codec"
+	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/nearest"
 	"pfi/sensorbee/sensorbee/data"
@@ -58,6 +60,82 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, err
 		nn:     nn,
 		nnNum:  nnNum,
 		rnnNum: rnnNum,
+	}, nil
+}
+
+const (
+	lightLOFFormatVersion = 1
+)
+
+type lightLOFMsgpack struct {
+	_struct struct{} `codec:",toarray"`
+
+	NNNum  int
+	RNNNum int
+
+	KDists []float32
+	LRDs   []float32
+
+	IDGen ID
+}
+
+func (l *LightLOF) Save(w io.Writer) error {
+	l.m.RLock()
+	defer l.m.RUnlock()
+
+	if _, err := w.Write([]byte{lightLOFFormatVersion}); err != nil {
+		return err
+	}
+
+	enc := codec.NewEncoder(w, anomalyMsgpackHandle)
+	if err := enc.Encode(&lightLOFMsgpack{
+		NNNum:  l.nnNum,
+		RNNNum: l.rnnNum,
+
+		KDists: l.kdists,
+		LRDs:   l.lrds,
+
+		IDGen: l.idgen,
+	}); err != nil {
+		return err
+	}
+	return nearest.Save(l.nn, w)
+}
+
+func LoadLightLOF(r io.Reader) (*LightLOF, error) {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
+		return nil, err
+	}
+
+	switch formatVersion[0] {
+	case 1:
+		return loadLightLOFFormatV1(r)
+	default:
+		return nil, fmt.Errorf("unsupported format version of LightLOF container: %v", formatVersion[0])
+	}
+}
+
+func loadLightLOFFormatV1(r io.Reader) (*LightLOF, error) {
+	m := lightLOFMsgpack{}
+	dec := codec.NewDecoder(r, anomalyMsgpackHandle)
+	if err := dec.Decode(&m); err != nil {
+		return nil, err
+	}
+	nn, err := nearest.Load(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LightLOF{
+		nn:     nn,
+		nnNum:  m.NNNum,
+		rnnNum: m.RNNNum,
+
+		kdists: m.KDists,
+		lrds:   m.LRDs,
+
+		idgen: m.IDGen,
 	}, nil
 }
 
