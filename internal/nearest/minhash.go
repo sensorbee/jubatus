@@ -5,7 +5,6 @@ import (
 	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/math/bitvector"
-	"sort"
 )
 
 type Minhash struct {
@@ -72,42 +71,6 @@ func (m *Minhash) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 
 func (m *Minhash) neighborRowFromHash(x *bitvector.Vector, size int) []IDist {
 	return rankingHammingBitVectors(m.data, x, size)
-}
-
-func rankingHammingBitVectors(bva *bitvector.Array, bv *bitvector.Vector, size int) []IDist {
-	len := bva.Len()
-	buf := make([]IDist, len)
-	for i := 0; i < len; i++ {
-		dist := bitvector.HammingDistance(bva, i, bv)
-		buf[i] = IDist{
-			ID:   ID(i + 1),
-			Dist: float32(dist),
-		}
-	}
-	sort.Sort(sortByDist(buf))
-	ret := make([]IDist, minInt(size, len))
-	bitNum := bva.BitNum()
-	for i := range ret {
-		ret[i] = IDist{
-			ID:   buf[i].ID,
-			Dist: buf[i].Dist / float32(bitNum),
-		}
-	}
-	return ret
-}
-
-type sortByDist []IDist
-
-func (s sortByDist) Len() int {
-	return len(s)
-}
-
-func (s sortByDist) Less(i, j int) bool {
-	return s[i].Dist < s[j].Dist || (s[i].Dist == s[j].Dist && s[i].ID < s[j].ID)
-}
-
-func (s sortByDist) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }
 
 func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
@@ -209,30 +172,6 @@ func calcHash(a, b uint64, val float32) float32 {
 	return -log32(r) / val
 }
 
-func calcStringHash(s string) uint64 {
-	// FNV-1
-	var hash uint64 = 14695981039346656037
-	for i := 0; i < len(s); i++ {
-		hash *= 1099511628211
-		hash ^= uint64(s[i])
-	}
-	return hash
-}
-
 func log32(x float32) float32 {
 	return float32(math.Log(float64(x)))
-}
-
-func minInt(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func maxInt(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
-	"math/rand"
 	"pfi/sensorbee/jubatus/internal/math/bitvector"
 	"sort"
 )
@@ -127,36 +126,6 @@ func (e *EuclidLSH) extend(n int) {
 			e.norms = newNorms
 		}
 	}
-}
-
-func cosineLSH(v FeatureVector, hashNum int) *bitvector.Vector {
-	return binarize(randomProjection(v, hashNum))
-}
-
-func randomProjection(v FeatureVector, hashNum int) []float32 {
-	proj := make([]float32, hashNum)
-	for i := range v {
-		dim := v[i].Dim
-		x := v[i].Value
-
-		seed := calcStringHash(dim)
-		src := rand.NewSource(int64(seed))
-		r := rand.New(src)
-		for j := 0; j < hashNum; j++ {
-			proj[j] += x * float32(r.NormFloat64())
-		}
-	}
-	return proj
-}
-
-func binarize(proj []float32) *bitvector.Vector {
-	ret := bitvector.NewVector(len(proj))
-	for i, x := range proj {
-		if x > 0 {
-			ret.Set(i)
-		}
-	}
-	return ret
 }
 
 func l2Norm(v FeatureVector) float32 {
