@@ -79,7 +79,7 @@ func Load(r io.Reader) (Neighbor, error) {
 func loadFormatV1(r io.Reader, algo string) (Neighbor, error) {
 	switch algo {
 	case "lsh":
-		return nil, fmt.Errorf("LSH is unimplemented")
+		return loadLSH(r)
 	case "minhash":
 		return loadMinhash(r)
 	case "euclid_lsh":
