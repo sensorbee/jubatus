@@ -181,6 +181,20 @@ func AddAndGetScore(ctx *core.Context, stateName string, featureVector data.Map)
 	return score, nil
 }
 
+func CalcScore(ctx *core.Context, stateName string, featureVector data.Map) (float32, error) {
+	l, err := lookupLightLOFState(ctx, stateName)
+	if err != nil {
+		return 0, err
+	}
+
+	score, err := l.lightLOF.CalcScore(FeatureVector(featureVector))
+	if err != nil {
+		return 0, err
+	}
+
+	return score, nil
+}
+
 func lookupLightLOFState(ctx *core.Context, stateName string) (*lightLOFState, error) {
 	st, err := ctx.SharedStates.Get(stateName)
 	if err != nil {
