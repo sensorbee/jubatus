@@ -71,7 +71,7 @@ func (m *Minhash) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 }
 
 func (m *Minhash) neighborRowFromHash(x *bitvector.Vector, size int) []IDist {
-	return m.rankingHammingBitVectors(x, size)
+	return rankingHammingBitVectors(m.data, x, size)
 }
 
 func (m *Minhash) GetAllRows() []ID {
@@ -79,11 +79,11 @@ func (m *Minhash) GetAllRows() []ID {
 	return nil
 }
 
-func (m *Minhash) rankingHammingBitVectors(bv *bitvector.Vector, size int) []IDist {
-	len := m.data.Len()
+func rankingHammingBitVectors(bva *bitvector.Array, bv *bitvector.Vector, size int) []IDist {
+	len := bva.Len()
 	buf := make([]IDist, len)
 	for i := 0; i < len; i++ {
-		dist := m.data.HammingDistance(i, bv)
+		dist := bva.HammingDistance(i, bv)
 		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: float32(dist),
@@ -91,10 +91,11 @@ func (m *Minhash) rankingHammingBitVectors(bv *bitvector.Vector, size int) []IDi
 	}
 	sort.Sort(sortByDist(buf))
 	ret := make([]IDist, minInt(size, len))
+	bitNum := bva.BitNum()
 	for i := range ret {
 		ret[i] = IDist{
 			ID:   buf[i].ID,
-			Dist: buf[i].Dist / float32(m.data.BitNum()),
+			Dist: buf[i].Dist / float32(bitNum),
 		}
 	}
 	return ret

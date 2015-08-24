@@ -45,7 +45,7 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, err
 	var nn nearest.Neighbor
 	switch nnAlgo {
 	case LSH:
-		return nil, errors.New("LSH is unimplemented")
+		nn = nearest.NewLSH(hashNum)
 	case Minhash:
 		nn = nearest.NewMinhash(hashNum)
 	case EuclidLSH:
