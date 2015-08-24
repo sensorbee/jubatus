@@ -189,7 +189,7 @@ func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForSco
 func toInternalForScoresImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVectorForScores) error {
 	for f, val := range v {
 		if m, err := data.AsMap(val); err == nil {
-			err := toInternalForScoresImpl(fmt.Sprintf("%s%s\x00", keyPrefix, f), m, intern, result)
+			err := toInternalForScoresImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, intern, result)
 			if err != nil {
 				return err
 			}
@@ -220,7 +220,7 @@ func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVec
 func toInternalImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVector) error {
 	for f, val := range v {
 		if m, err := data.AsMap(val); err == nil {
-			err := toInternalImpl(fmt.Sprintf("%s%s\x00", keyPrefix, f), m, intern, result)
+			err := toInternalImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, intern, result)
 			if err != nil {
 				return err
 			}
