@@ -179,37 +179,63 @@ type FeatureVector data.Map
 
 func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
-	for f, val := range v {
-		xx, err := data.ToFloat(val)
-		if err != nil {
-			return nil, err
-		}
-		x := float32(xx)
-		if d := intern.GetOrZero(f); d != 0 {
-			ret = append(ret, fElement{dim(d), x})
-		}
+	err := toInternalForScoresImpl("", data.Map(v), intern, &ret)
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
 
-func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
-	full := make(fVector, len(v))
-	l, r := 0, len(v)
+func toInternalForScoresImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVectorForScores) error {
 	for f, val := range v {
-		xx, err := data.ToFloat(val)
-		if err != nil {
-			return nil, nil, err
-		}
-		x := float32(xx)
-		if d := intern.GetOrZero(f); d != 0 {
-			full[l] = fElement{dim(d), x}
-			l++
+		if m, err := data.AsMap(val); err == nil {
+			err := toInternalForScoresImpl(fmt.Sprintf("%s%s\x00", keyPrefix, f), m, intern, result)
+			if err != nil {
+				return err
+			}
 		} else {
-			r--
-			full[r] = fElement{dim(intern.Get(f)), x}
+			xx, err := data.ToFloat(val)
+			if err != nil {
+				// TODO: return better error
+				return err
+			}
+			x := float32(xx)
+			if d := intern.GetOrZero(keyPrefix + f); d != 0 {
+				*result = append(*result, fElement{dim(d), x})
+			}
 		}
 	}
-	return fVectorForScores(full[:l]), full, nil
+	return nil
+}
+
+func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
+	full := make(fVector, len(v))
+	err := toInternalImpl("", data.Map(v), intern, &full)
+	if err != nil {
+		return nil, nil, err
+	}
+	return fVectorForScores(full), full, nil
+}
+
+func toInternalImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVector) error {
+	for f, val := range v {
+		if m, err := data.AsMap(val); err == nil {
+			err := toInternalImpl(fmt.Sprintf("%s%s\x00", keyPrefix, f), m, intern, result)
+			if err != nil {
+				return err
+			}
+		} else {
+			xx, err := data.ToFloat(val)
+			if err != nil {
+				// TODO: return better error
+				return err
+			}
+			x := float32(xx)
+			d := intern.Get(keyPrefix + f)
+			*result = append(*result, fElement{dim(d), x})
+		}
+	}
+	return nil
 }
 
 type dim int
