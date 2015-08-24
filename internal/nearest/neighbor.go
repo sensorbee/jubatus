@@ -11,7 +11,6 @@ type Neighbor interface {
 	SetRow(id ID, v FeatureVector)
 	NeighborRowFromID(id ID, size int) []IDist
 	NeighborRowFromFV(v FeatureVector, size int) []IDist
-	GetAllRows() []ID
 
 	name() string
 	save(w io.Writer) error

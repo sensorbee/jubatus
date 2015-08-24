@@ -74,11 +74,6 @@ func (m *Minhash) neighborRowFromHash(x *bitvector.Vector, size int) []IDist {
 	return rankingHammingBitVectors(m.data, x, size)
 }
 
-func (m *Minhash) GetAllRows() []ID {
-	// TODO: implement
-	return nil
-}
-
 func rankingHammingBitVectors(bva *bitvector.Array, bv *bitvector.Vector, size int) []IDist {
 	len := bva.Len()
 	buf := make([]IDist, len)

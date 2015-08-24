@@ -116,11 +116,6 @@ func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size 
 	return ret
 }
 
-func (e *EuclidLSH) GetAllRows() []ID {
-	// TODO: implement
-	return nil
-}
-
 func (e *EuclidLSH) extend(n int) {
 	if e.lshs.Len() < n {
 		e.lshs.Resize(n)

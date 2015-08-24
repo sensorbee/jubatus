@@ -72,11 +72,6 @@ func (l *LSH) neighborRowFromFV(x *bitvector.Vector, size int) []IDist {
 	return rankingHammingBitVectors(l.data, x, size)
 }
 
-func (*LSH) GetAllRows() []ID {
-	// TODO: implement
-	return nil
-}
-
 func (l *LSH) hash(v FeatureVector) *bitvector.Vector {
 	return cosineLSH(v, l.data.BitNum())
 }
