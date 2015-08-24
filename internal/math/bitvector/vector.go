@@ -23,12 +23,3 @@ func (v *Vector) Set(n int) {
 
 	v.data[n/wordBits] |= 1 << uint(n%wordBits)
 }
-
-func bitcount(x word) int {
-	var ret int
-	for x != 0 {
-		ret++
-		x &= x - 1
-	}
-	return ret
-}
