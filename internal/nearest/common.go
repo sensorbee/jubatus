@@ -103,6 +103,11 @@ func pivot(x, y, z *IDist) IDist {
 }
 
 func partialSortByDist(dists []IDist, n int) {
+	if n <= 32 {
+		partialInsertionSort(dists, n)
+		return
+	}
+
 	for {
 		len := len(dists)
 		switch {
@@ -145,6 +150,31 @@ func partialSortByDist(dists []IDist, n int) {
 			return
 		default: // l > n
 			dists = dists[:l]
+		}
+	}
+}
+
+func partialInsertionSort(dists []IDist, n int) {
+	len := len(dists)
+	if len <= n {
+		sort.Sort(sortByDist(dists))
+		return
+	}
+
+	top := dists[:n]
+	sort.Sort(sortByDist(top))
+	back := &dists[n-1]
+	for i := n; i < len; i++ {
+		dist := dists[i]
+		if less(&dist, back) {
+			for j := 0; j < n; j++ {
+				if less(&dist, &dists[j]) {
+					dists[i] = *back
+					copy(dists[j+1:n], dists[j:])
+					dists[j] = dist
+					break
+				}
+			}
 		}
 	}
 }
