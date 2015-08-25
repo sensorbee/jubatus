@@ -10,7 +10,7 @@ import (
 func TestArrayOfOneBit(t *testing.T) {
 	a := NewArray(1)
 
-	Convey("Given an arry of one bit", t, func() {
+	Convey("Given an array of one bit", t, func() {
 		Convey("it's initial size should be zero.", func() {
 			So(a.Len(), ShouldBeZeroValue)
 		})
