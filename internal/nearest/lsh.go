@@ -61,7 +61,8 @@ func (l *LSH) SetRow(id ID, v FeatureVector) {
 }
 
 func (l *LSH) NeighborRowFromID(id ID, size int) []IDist {
-	return l.neighborRowFromFV(l.data.Get(int(id-1)), size)
+	hash, _ := l.data.Get(int(id - 1))
+	return l.neighborRowFromFV(hash, size)
 }
 
 func (l *LSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {

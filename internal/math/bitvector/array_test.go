@@ -23,7 +23,8 @@ func TestArrayOfOneBit(t *testing.T) {
 
 			Convey("and all bits should be zero.", func() {
 				for j := 0; j < a.Len(); j++ {
-					v := a.Get(j)
+					v, err := a.Get(j)
+					So(err, ShouldBeNil)
 					So(v, ShouldNotBeNil)
 					So(v.GetAsUint64(0), ShouldBeZeroValue)
 				}
@@ -33,16 +34,19 @@ func TestArrayOfOneBit(t *testing.T) {
 		Convey("when setting one to the third element", func() {
 			one := NewVector(1)
 			one.Set(0)
+
 			a.Set(2, one)
 			Convey("the third element should be one", func() {
-				third := a.Get(2)
+				third, err := a.Get(2)
+				So(err, ShouldBeNil)
 				So(third.GetAsUint64(0), ShouldEqual, 1)
 			})
 
 			Convey("and other elements should be zero.", func() {
 				for i := 0; i < a.Len(); i++ {
 					if i != 2 {
-						v := a.Get(i)
+						v, err := a.Get(i)
+						So(err, ShouldBeNil)
 						So(v.GetAsUint64(0), ShouldBeZeroValue)
 					}
 				}
@@ -70,7 +74,8 @@ func TestArrayOfSmallBits(t *testing.T) {
 
 				Convey("and all bits should be zero.", func() {
 					for j := 0; j < a.Len(); j++ {
-						v := a.Get(j)
+						v, err := a.Get(j)
+						So(err, ShouldBeNil)
 						So(v.GetAsUint64(0), ShouldBeZeroValue)
 					}
 				})
@@ -81,14 +86,16 @@ func TestArrayOfSmallBits(t *testing.T) {
 				one.Set(0)
 				a.Set(2, one)
 				Convey("the third element should be one", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					So(third.GetAsUint64(0), ShouldEqual, 1)
 				})
 
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							So(v.GetAsUint64(0), ShouldBeZeroValue)
 						}
 					}
@@ -101,14 +108,16 @@ func TestArrayOfSmallBits(t *testing.T) {
 				bits.Set(bitNum - 1)
 				a.Set(2, bits)
 				Convey("the third element should be the bits", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					So(third.GetAsUint64(0), ShouldEqual, bits.GetAsUint64(0))
 				})
 
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							So(v.GetAsUint64(0), ShouldBeZeroValue)
 						}
 					}
@@ -122,14 +131,16 @@ func TestArrayOfSmallBits(t *testing.T) {
 				}
 				a.Set(2, bits)
 				Convey("the third element should be the bits", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					So(third.GetAsUint64(0), ShouldEqual, bits.GetAsUint64(0))
 				})
 
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							So(v.GetAsUint64(0), ShouldBeZeroValue)
 						}
 					}
@@ -170,7 +181,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 
 				Convey("and all bits should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
-						v := a.Get(i)
+						v, err := a.Get(i)
+						So(err, ShouldBeNil)
 						for j := 0; j < nw; j++ {
 							So(v.GetAsUint64(j), ShouldBeZeroValue)
 						}
@@ -183,7 +195,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				one.Set(0)
 				a.Set(2, one)
 				Convey("the third element should be one", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					So(third.GetAsUint64(0), ShouldEqual, 1)
 					for i := 1; i < nw; i++ {
 						So(third.GetAsUint64(i), ShouldBeZeroValue)
@@ -193,7 +206,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							for j := 0; j < nw; j++ {
 								So(v.GetAsUint64(j), ShouldBeZeroValue)
 							}
@@ -208,7 +222,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				bits.Set(bitNum - 1)
 				a.Set(2, bits)
 				Convey("the third element should be the bits", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					for i := 0; i < nw; i++ {
 						So(third.GetAsUint64(i), ShouldEqual, bits.GetAsUint64(i))
 					}
@@ -217,7 +232,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							for j := 0; j < nw; j++ {
 								So(v.GetAsUint64(j), ShouldBeZeroValue)
 							}
@@ -233,7 +249,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				}
 				a.Set(2, bits)
 				Convey("the third element should be the bits", func() {
-					third := a.Get(2)
+					third, err := a.Get(2)
+					So(err, ShouldBeNil)
 					for i := 0; i < nw; i++ {
 						So(third.GetAsUint64(i), ShouldEqual, bits.GetAsUint64(i))
 					}
@@ -242,7 +259,8 @@ func TestArrayOfLargePrimeBits(t *testing.T) {
 				Convey("and other elements should be zero.", func() {
 					for i := 0; i < a.Len(); i++ {
 						if i != 2 {
-							v := a.Get(i)
+							v, err := a.Get(i)
+							So(err, ShouldBeNil)
 							for j := 0; j < nw; j++ {
 								So(v.GetAsUint64(j), ShouldBeZeroValue)
 							}

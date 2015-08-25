@@ -58,9 +58,9 @@ func (a *Array) BitNum() int {
 	return a.bitNum
 }
 
-func (a *Array) Get(n int) *Vector {
+func (a *Array) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.len {
-		panic("TODO: fix")
+		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
 
 	// the nth bitvector is stored in [lbit, rbit).
@@ -77,7 +77,7 @@ func (a *Array) Get(n int) *Vector {
 		return &Vector{
 			data:   buf{x},
 			bitNum: a.bitNum,
-		}
+		}, nil
 	}
 
 	// the bit vector starts from the least bit in a word.
@@ -94,7 +94,7 @@ func (a *Array) Get(n int) *Vector {
 		return &Vector{
 			data:   retBuf,
 			bitNum: a.bitNum,
-		}
+		}, nil
 	}
 
 	retLen := nWords(a.bitNum, 1)
@@ -122,15 +122,15 @@ func (a *Array) Get(n int) *Vector {
 	return &Vector{
 		data:   retBuf,
 		bitNum: a.bitNum,
-	}
+	}, nil
 }
 
-func (a *Array) Set(n int, v *Vector) {
+func (a *Array) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
-		panic("TODO: fix")
+		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
 	if n < 0 || n >= a.len {
-		panic("TODO: fix")
+		return fmt.Errorf("invalid Array index: %v", n)
 	}
 
 	// v will be stored in [lbit, rbit).
@@ -142,18 +142,18 @@ func (a *Array) Set(n int, v *Vector) {
 	// v will be stored in a word.
 	if l == r || (l+1 == r && rbit%wordBits == 0) {
 		set(&a.data[l], lbit%wordBits, v.data[0], a.bitNum)
-		return
+		return nil
 	}
 
 	if lbit%wordBits == 0 {
 		if rbit%wordBits == 0 {
 			copy(a.data[l:], v.data)
-			return
+			return nil
 		}
 		len := len(v.data)
 		copy(a.data[l:], v.data[:len-1])
 		set(&a.data[r], 0, v.data[len-1], a.bitNum%wordBits)
-		return
+		return nil
 	}
 
 	copy(a.data[l+1:r], v.data)
@@ -173,6 +173,7 @@ func (a *Array) Set(n int, v *Vector) {
 		set(&a.data[l], lOffset, v.data[len-2]>>uint(rightNBits), wordBits-rightNBits)
 		set(&a.data[l], wordBits-bitNumRes, v.data[len-1], bitNumRes)
 	}
+	return nil
 }
 
 const (

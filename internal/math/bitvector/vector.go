@@ -1,5 +1,9 @@
 package bitvector
 
+import (
+	"fmt"
+)
+
 type Vector struct {
 	data   buf
 	bitNum int
@@ -16,10 +20,11 @@ func (v *Vector) GetAsUint64(n int) uint64 {
 	return uint64(v.data[n])
 }
 
-func (v *Vector) Set(n int) {
+func (v *Vector) Set(n int) error {
 	if n < 0 || n >= v.bitNum {
-		panic("TODO: fix")
+		return fmt.Errorf("invalid Vector index: %v", n)
 	}
 
 	v.data[n/wordBits] |= 1 << uint(n%wordBits)
+	return nil
 }

@@ -1,8 +1,15 @@
 package bitvector
 
-func HammingDistance(a *Array, n int, v *Vector) int {
+import (
+	"fmt"
+)
+
+func HammingDistance(a *Array, n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
-		panic("TODO: fix")
+		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
 	}
 
 	lbit := n * a.bitNum
@@ -15,7 +22,7 @@ func HammingDistance(a *Array, n int, v *Vector) int {
 	if l == r || (l+1 == r && nRightBits == 0) {
 		offset := lbit % wordBits
 		x := (a.data[l] >> uint(offset)) & leastBits(a.bitNum)
-		return bitcount(x ^ word(v.GetAsUint64(0)))
+		return bitcount(x ^ word(v.GetAsUint64(0))), nil
 	}
 
 	if lbit%wordBits == 0 {
@@ -28,7 +35,7 @@ func HammingDistance(a *Array, n int, v *Vector) int {
 			last := r - l
 			ret += bitcount((x[last] & leastBits(nRightBits)) ^ v.data[last])
 		}
-		return ret
+		return ret, nil
 	}
 
 	leftOffset := lbit % wordBits
@@ -50,7 +57,7 @@ func HammingDistance(a *Array, n int, v *Vector) int {
 			ret += bitcount(x ^ v.data[nfull+1])
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 func bitcount(x word) int {
