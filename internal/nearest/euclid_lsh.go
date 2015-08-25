@@ -75,6 +75,8 @@ func loadEuclidLSHFormatV1(r io.Reader) (*EuclidLSH, error) {
 	return &EuclidLSH{
 		lshs:  lshs,
 		norms: d.Norms,
+
+		cosTable: cosTable(lshs.BitNum()),
 	}, nil
 }
 
