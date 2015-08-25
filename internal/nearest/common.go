@@ -46,7 +46,7 @@ func rankingHammingBitVectors(bva *bitvector.Array, bv *bitvector.Vector, size i
 			Dist: float32(dist),
 		}
 	}
-	sort.Sort(sortByDist(buf))
+	partialSortByDist(buf, size)
 	ret := make([]IDist, minInt(size, len))
 	bitNum := bva.BitNum()
 	for i := range ret {
@@ -65,11 +65,88 @@ func (s sortByDist) Len() int {
 }
 
 func (s sortByDist) Less(i, j int) bool {
-	return s[i].Dist < s[j].Dist || (s[i].Dist == s[j].Dist && s[i].ID < s[j].ID)
+	return less(&s[i], &s[j])
 }
 
 func (s sortByDist) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
+}
+
+func less(x, y *IDist) bool {
+	return x.Dist < y.Dist || (x.Dist == y.Dist && x.ID < y.ID)
+}
+
+func pivot(x, y, z *IDist) IDist {
+	if less(x, y) {
+		// x < y < z
+		if less(y, z) {
+			return *y
+		}
+		// x < z < y
+		if less(x, z) {
+			return *z
+		}
+		// z < x < y
+		return *x
+	}
+
+	// y < x < z
+	if less(x, z) {
+		return *x
+	}
+	// y < z < x
+	if less(y, z) {
+		return *z
+	}
+	// z < y < x
+	return *y
+}
+
+func partialSortByDist(dists []IDist, n int) {
+	for {
+		len := len(dists)
+		switch {
+		case len <= 1:
+			return
+		case len == 2:
+			if less(&dists[1], &dists[0]) {
+				dists[0], dists[1] = dists[1], dists[0]
+			}
+			return
+		case len <= n:
+			sort.Sort(sortByDist(dists))
+			return
+		}
+		pivot := pivot(&dists[0], &dists[len/2], &dists[len-1])
+		l := 0
+		r := len
+
+		for {
+			for less(&dists[l], &pivot) {
+				l++
+			}
+			for less(&pivot, &dists[r-1]) {
+				r--
+			}
+			if r-l <= 1 {
+				break
+			}
+			dists[l], dists[r-1] = dists[r-1], dists[l]
+			l++
+			r--
+		}
+		switch {
+		case l < n:
+			sort.Sort(sortByDist(dists[:l]))
+			dists = dists[l:]
+			n = n - l
+		case l == n:
+			sort.Sort(sortByDist(dists[:l]))
+			return
+		default: // l > n
+			dists = dists[:l]
+		}
+	}
 }
 
 func calcStringHash(s string) uint64 {

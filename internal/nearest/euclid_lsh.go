@@ -6,7 +6,6 @@ import (
 	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/math/bitvector"
-	"sort"
 )
 
 type EuclidLSH struct {
@@ -104,7 +103,7 @@ func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size 
 			Dist: score,
 		}
 	}
-	sort.Sort(sortByDist(buf))
+	partialSortByDist(buf, size)
 	ret := make([]IDist, minInt(size, len(buf)))
 	squaredNorm := norm * norm
 	for i := 0; i < len(ret); i++ {
