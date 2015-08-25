@@ -61,10 +61,22 @@ func HammingDistance(a *Array, n int, v *Vector) (int, error) {
 }
 
 func bitcount(x word) int {
-	var ret int
-	for x != 0 {
-		ret++
-		x &= x - 1
+	return int(bitcountTable[x&bitcountMask]) + int(bitcountTable[x>>16&bitcountMask]) +
+		int(bitcountTable[x>>32&bitcountMask]) + int(bitcountTable[x>>48])
+}
+
+const bitcountMask = word(^uint16(0))
+
+var bitcountTable = [bitcountMask + 1]uint8{}
+
+func init() {
+	for i := range bitcountTable {
+		var cnt uint8
+		n := i
+		for n != 0 {
+			cnt++
+			n &= n - 1
+		}
+		bitcountTable[i] = cnt
 	}
-	return ret
 }
