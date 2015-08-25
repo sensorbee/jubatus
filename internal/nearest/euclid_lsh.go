@@ -11,6 +11,8 @@ import (
 type EuclidLSH struct {
 	lshs  *bitvector.Array
 	norms []float32
+
+	cosTable []float32
 }
 
 type euclidLSHMsgpack struct {
@@ -26,6 +28,8 @@ const (
 func NewEuclidLSH(hashNum int) *EuclidLSH {
 	return &EuclidLSH{
 		lshs: bitvector.NewArray(hashNum),
+
+		cosTable: cosTable(hashNum),
 	}
 }
 
@@ -96,8 +100,7 @@ func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size 
 	buf := make([]IDist, len(e.norms))
 	for i := range buf {
 		hDist, _ := bitvector.HammingDistance(e.lshs, i, x)
-		theta := float64(hDist) * math.Pi / float64(e.lshs.BitNum())
-		score := e.norms[i] * (e.norms[i] - 2*norm*float32(math.Cos(theta)))
+		score := e.norms[i] * (e.norms[i] - 2*norm*e.cosTable[hDist])
 		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: score,
@@ -143,4 +146,14 @@ func squaredL2Norm(v FeatureVector) float32 {
 
 func sqrt32(x float32) float32 {
 	return float32(math.Sqrt(float64(x)))
+}
+
+func cosTable(hashNum int) []float32 {
+	ret := make([]float32, hashNum)
+	ret[0] = 1 // cos(0) == 1
+	for i := 1; i < len(ret); i++ {
+		theta := float64(i) * math.Pi / float64(hashNum)
+		ret[i] = float32(math.Cos(theta))
+	}
+	return ret
 }
