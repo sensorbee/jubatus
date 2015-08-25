@@ -22,7 +22,7 @@ func HammingDistance(a *Array, n int, v *Vector) (int, error) {
 	if l == r || (l+1 == r && nRightBits == 0) {
 		offset := lbit % wordBits
 		x := (a.data[l] >> uint(offset)) & leastBits(a.bitNum)
-		return bitcount(x ^ word(v.GetAsUint64(0))), nil
+		return bitcount(x ^ word(v.getAsUint64(0))), nil
 	}
 
 	if lbit%wordBits == 0 {

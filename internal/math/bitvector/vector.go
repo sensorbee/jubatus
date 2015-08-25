@@ -16,7 +16,7 @@ func NewVector(bitNum int) *Vector {
 	}
 }
 
-func (v *Vector) GetAsUint64(n int) uint64 {
+func (v *Vector) getAsUint64(n int) uint64 {
 	return uint64(v.data[n])
 }
 

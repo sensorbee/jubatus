@@ -23,7 +23,7 @@ func TestArray(t *testing.T) {
 				})
 
 				Convey("the least significant bit should be set.", func() {
-					So(v.GetAsUint64(0), ShouldEqual, 1)
+					So(v.getAsUint64(0), ShouldEqual, 1)
 				})
 			})
 		})
