@@ -180,49 +180,35 @@ type FeatureVector data.Map
 // toInternalForScores converts a feature vector to internal format. It requires read lock for intern.
 func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
-	err := toInternalForScoresImpl("", data.Map(v), intern, &ret)
+	err := toInternalImpl("", data.Map(v), func(key string, value float32) {
+		if d := intern.GetOrZero(key); d != 0 {
+			ret = append(ret, fElement{dim(d), value})
+		}
+	})
 	if err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-func toInternalForScoresImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVectorForScores) error {
-	for f, val := range v {
-		if m, err := data.AsMap(val); err == nil {
-			err := toInternalForScoresImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, intern, result)
-			if err != nil {
-				return err
-			}
-		} else {
-			xx, err := data.ToFloat(val)
-			if err != nil {
-				// TODO: return better error
-				return err
-			}
-			x := float32(xx)
-			if d := intern.GetOrZero(keyPrefix + f); d != 0 {
-				*result = append(*result, fElement{dim(d), x})
-			}
-		}
-	}
-	return nil
-}
-
 // toInternal converts a feature vector to internal format. It requires write lock for intern.
 func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
 	full := make(fVector, len(v))
-	err := toInternalImpl("", data.Map(v), intern, &full)
+	err := toInternalImpl("", data.Map(v), func(key string, value float32) {
+		full = append(full, fElement{dim(intern.Get(key)), value})
+	})
 	if err != nil {
 		return nil, nil, err
 	}
 	return fVectorForScores(full), full, nil
 }
 
-func toInternalImpl(keyPrefix string, v data.Map, intern *intern.Intern, result *fVector) error {
+type appender func(string, float32)
+
+func toInternalImpl(keyPrefix string, v data.Map, ap appender) error {
 	for f, val := range v {
 		if m, err := data.AsMap(val); err == nil {
-			err := toInternalImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, intern, result)
+			err := toInternalImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, ap)
 			if err != nil {
 				return err
 			}
@@ -233,8 +219,7 @@ func toInternalImpl(keyPrefix string, v data.Map, intern *intern.Intern, result 
 				return err
 			}
 			x := float32(xx)
-			d := intern.Get(keyPrefix + f)
-			*result = append(*result, fElement{dim(d), x})
+			ap(keyPrefix+f, x)
 		}
 	}
 	return nil
