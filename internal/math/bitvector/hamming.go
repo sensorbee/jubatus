@@ -70,6 +70,10 @@ func bitcount(x word) int {
 		int(bitcountTable[x>>32&bitcountMask]) + int(bitcountTable[x>>48])
 }
 
+func bitcount32(x uint32) int {
+	return int(bitcountTable[x&uint32(bitcountMask)]) + int(bitcountTable[x>>16])
+}
+
 const bitcountMask = word(^uint16(0))
 
 var bitcountTable = [bitcountMask + 1]uint8{}

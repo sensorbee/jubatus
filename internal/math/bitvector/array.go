@@ -349,7 +349,7 @@ func (a *SmallPowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
 	if n < 0 || n >= a.Len() {
 		return 0, fmt.Errorf("invalid Array index: %v", n)
 	}
-	return bitcount(a.get(n) ^ v.data[0]), nil
+	return bitcount32(uint32(a.get(n) ^ v.data[0])), nil
 }
 
 func (a *SmallPowerOfTwoArray) Get(n int) (*Vector, error) {
