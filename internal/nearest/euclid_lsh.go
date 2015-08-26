@@ -9,7 +9,7 @@ import (
 )
 
 type EuclidLSH struct {
-	lshs  *bitvector.Array
+	lshs  bitvector.Array
 	norms []float32
 
 	cosTable []float32

@@ -36,7 +36,7 @@ func binarize(proj []float32) *bitvector.Vector {
 	return ret
 }
 
-func rankingHammingBitVectors(bva *bitvector.Array, bv *bitvector.Vector, size int) []IDist {
+func rankingHammingBitVectors(bva bitvector.Array, bv *bitvector.Vector, size int) []IDist {
 	len := bva.Len()
 	buf := make([]IDist, len)
 	for i := 0; i < len; i++ {

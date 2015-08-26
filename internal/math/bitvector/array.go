@@ -6,7 +6,16 @@ import (
 	"io"
 )
 
-type Array struct {
+type Array interface {
+	Resize(n int)
+	Len() int
+	BitNum() int
+	Get(int) (*Vector, error)
+	Set(int, *Vector) error
+	Save(io.Writer) error
+}
+
+type GeneralArray struct {
 	data   buf
 	bitNum int
 	len    int
@@ -19,22 +28,22 @@ type arrayData struct {
 	Len     int
 }
 
-func NewArray(bitNum int) *Array {
+func NewArray(bitNum int) Array {
 	if bitNum <= 0 {
 		return nil
 	}
 
-	return &Array{
+	return &GeneralArray{
 		bitNum: bitNum,
 	}
 }
 
-func (a *Array) Resize(n int) {
+func (a *GeneralArray) Resize(n int) {
 	a.reserve(n)
 	a.len = n
 }
 
-func (a *Array) reserve(n int) {
+func (a *GeneralArray) reserve(n int) {
 	currCap := a.cap()
 	if n <= currCap {
 		return
@@ -46,19 +55,19 @@ func (a *Array) reserve(n int) {
 	a.data = newBuf
 }
 
-func (a *Array) Len() int {
+func (a *GeneralArray) Len() int {
 	return a.len
 }
 
-func (a *Array) cap() int {
+func (a *GeneralArray) cap() int {
 	return len(a.data) * wordBits / a.bitNum
 }
 
-func (a *Array) BitNum() int {
+func (a *GeneralArray) BitNum() int {
 	return a.bitNum
 }
 
-func (a *Array) Get(n int) (*Vector, error) {
+func (a *GeneralArray) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.len {
 		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
@@ -125,7 +134,7 @@ func (a *Array) Get(n int) (*Vector, error) {
 	}, nil
 }
 
-func (a *Array) Set(n int, v *Vector) error {
+func (a *GeneralArray) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
 		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -184,7 +193,7 @@ var arrayMsgpackHandle = &codec.MsgpackHandle{
 	RawToString: true,
 }
 
-func (a *Array) Save(w io.Writer) error {
+func (a *GeneralArray) Save(w io.Writer) error {
 	if _, err := w.Write([]byte{arrayFormatVersion}); err != nil {
 		return err
 	}
@@ -200,7 +209,7 @@ func (a *Array) Save(w io.Writer) error {
 	return nil
 }
 
-func LoadArray(r io.Reader) (*Array, error) {
+func LoadArray(r io.Reader) (Array, error) {
 	formatVersion := make([]byte, 1)
 	if _, err := r.Read(formatVersion); err != nil {
 		return nil, err
@@ -214,13 +223,13 @@ func LoadArray(r io.Reader) (*Array, error) {
 	}
 }
 
-func loadArrayFormatV1(r io.Reader) (*Array, error) {
+func loadArrayFormatV1(r io.Reader) (Array, error) {
 	var d arrayData
 	dec := codec.NewDecoder(r, arrayMsgpackHandle)
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
-	return &Array{
+	return &GeneralArray{
 		data:   d.Data,
 		bitNum: d.BitNum,
 		len:    d.Len,

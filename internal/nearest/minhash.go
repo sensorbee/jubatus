@@ -8,7 +8,7 @@ import (
 )
 
 type Minhash struct {
-	data *bitvector.Array
+	data bitvector.Array
 }
 
 const (

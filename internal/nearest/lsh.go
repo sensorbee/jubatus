@@ -7,7 +7,7 @@ import (
 )
 
 type LSH struct {
-	data *bitvector.Array
+	data bitvector.Array
 }
 
 const (
