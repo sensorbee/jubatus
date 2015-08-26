@@ -38,6 +38,17 @@ func NewArray(bitNum int) Array {
 	if bitNum == wordBits {
 		return &WordArray{}
 	}
+	// 2^n
+	if bitNum&(bitNum-1) == 0 {
+		if bitNum < wordBits {
+			return &SmallPowerOfTwoArray{
+				bitNum: bitNum,
+			}
+		}
+		return &LargePowerOfTwoArray{
+			bitNum: bitNum,
+		}
+	}
 
 	return &GeneralArray{
 		bitNum: bitNum,
@@ -301,5 +312,142 @@ func (a *WordArray) Set(n int, v *Vector) error {
 }
 
 func (a *WordArray) Save(io.Writer) error {
+	return errors.New("TODO: implement")
+}
+
+type SmallPowerOfTwoArray struct {
+	data   buf
+	bitNum int
+	len    int
+}
+
+func (a *SmallPowerOfTwoArray) Resize(n int) {
+	newDataLen := nWords(a.bitNum, n)
+	cap := len(a.data)
+	if cap >= newDataLen {
+		a.len = n
+		return
+	}
+	newBuf := make(buf, 2*maxInt(cap, newDataLen))
+	copy(newBuf, a.data)
+	a.data = newBuf
+	a.len = n
+}
+
+func (a *SmallPowerOfTwoArray) Len() int {
+	return a.len
+}
+
+func (a *SmallPowerOfTwoArray) BitNum() int {
+	return a.bitNum
+}
+
+func (a *SmallPowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
+	if a.bitNum != v.bitNum {
+		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
+	}
+	return bitcount(a.get(n) ^ v.data[0]), nil
+}
+
+func (a *SmallPowerOfTwoArray) Get(n int) (*Vector, error) {
+	if n < 0 || n >= a.Len() {
+		return nil, fmt.Errorf("invalid Array index: %v", n)
+	}
+	v := NewVector(a.bitNum)
+	v.data[0] = a.get(n)
+	return v, nil
+}
+
+func (a *SmallPowerOfTwoArray) get(n int) word {
+	nelems := wordBits / a.bitNum
+	mask := leastBits(a.bitNum)
+	return (a.data[n/nelems] >> uint(n%nelems*a.bitNum)) & mask
+}
+
+func (a *SmallPowerOfTwoArray) Set(n int, v *Vector) error {
+	if a.bitNum != v.bitNum {
+		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return fmt.Errorf("invalid Array index: %v", n)
+	}
+	nelems := wordBits / a.bitNum
+	mask := leastBits(a.bitNum)
+	offset := uint(n % nelems * a.bitNum)
+	a.data[n/nelems] &= ^(mask << offset)
+	a.data[n/nelems] |= v.data[0] << offset
+	return nil
+}
+
+func (a *SmallPowerOfTwoArray) Save(io.Writer) error {
+	return errors.New("TODO: implement")
+}
+
+type LargePowerOfTwoArray struct {
+	data   buf
+	bitNum int
+}
+
+func (a *LargePowerOfTwoArray) Resize(n int) {
+	newLen := n * (a.bitNum / wordBits)
+	cap := cap(a.data)
+	if cap >= newLen {
+		a.data = a.data[:newLen]
+		return
+	}
+	newBuf := make(buf, newLen, 2*maxInt(cap, newLen))
+	copy(newBuf, a.data)
+	a.data = newBuf
+}
+
+func (a *LargePowerOfTwoArray) Len() int {
+	return len(a.data) * (a.bitNum / wordBits)
+}
+
+func (a *LargePowerOfTwoArray) BitNum() int {
+	return a.bitNum
+}
+
+func (a *LargePowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
+	if a.bitNum != v.bitNum {
+		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
+	}
+	nw := a.bitNum / wordBits
+	var ret int
+	for i := 0; i < nw; i++ {
+		ret += bitcount(a.data[n*nw+i] ^ v.data[i])
+	}
+	return ret, nil
+}
+
+func (a *LargePowerOfTwoArray) Get(n int) (*Vector, error) {
+	if n < 0 || n >= a.Len() {
+		return nil, fmt.Errorf("invalid Array index: %v", n)
+	}
+	v := NewVector(a.bitNum)
+	nw := a.bitNum / wordBits
+	copy(v.data, a.data[n*nw:])
+	return v, nil
+}
+
+func (a *LargePowerOfTwoArray) Set(n int, v *Vector) error {
+	if a.bitNum != v.bitNum {
+		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return fmt.Errorf("invalid Array index: %v", n)
+	}
+	nw := a.bitNum / wordBits
+	copy(a.data[n*nw:], v.data)
+	return nil
+}
+
+func (a *LargePowerOfTwoArray) Save(io.Writer) error {
 	return errors.New("TODO: implement")
 }
