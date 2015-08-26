@@ -177,6 +177,7 @@ func (a *AROW) RegWeight() float32 {
 // FeatureVector is a type for feature vectors.
 type FeatureVector data.Map
 
+// toInternalForScores converts a feature vector to internal format. It requires read lock for intern.
 func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
 	err := toInternalForScoresImpl("", data.Map(v), intern, &ret)
@@ -208,6 +209,7 @@ func toInternalForScoresImpl(keyPrefix string, v data.Map, intern *intern.Intern
 	return nil
 }
 
+// toInternal converts a feature vector to internal format. It requires write lock for intern.
 func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
 	full := make(fVector, len(v))
 	err := toInternalImpl("", data.Map(v), intern, &full)
