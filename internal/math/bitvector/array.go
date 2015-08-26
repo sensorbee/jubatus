@@ -431,7 +431,7 @@ func (a *LargePowerOfTwoArray) Resize(n int) {
 }
 
 func (a *LargePowerOfTwoArray) Len() int {
-	return len(a.data) * (a.bitNum / wordBits)
+	return len(a.data) / (a.bitNum / wordBits)
 }
 
 func (a *LargePowerOfTwoArray) BitNum() int {
