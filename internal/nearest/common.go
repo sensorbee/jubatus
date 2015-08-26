@@ -104,7 +104,7 @@ func pivot(x, y, z *IDist) IDist {
 
 func partialSortByDist(dists []IDist, n int) {
 	for {
-		if n <= 32 {
+		if n <= 64 {
 			partialInsertionSort(dists, n)
 			return
 		}
@@ -187,6 +187,7 @@ func partialInsertionSort(dists []IDist, n int) {
 			}
 		}
 	}
+	sort.Sort(sortByDist(dists[:n]))
 }
 
 func maxDistsIx(dists []IDist) int {
