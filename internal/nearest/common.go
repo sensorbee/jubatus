@@ -173,19 +173,17 @@ func partialInsertionSort(dists []IDist, n int) {
 	}
 
 	// n >= 2 and len > n
-	top := dists[:n]
-	sort.Sort(sortByDist(top))
+	max := maxDistsIx(dists[:n])
 	back := &dists[n-1]
+	dists[max], *back = *back, dists[max]
 	for i := n; i < len; i++ {
-		dist := dists[i]
-		if less(&dist, back) {
-			for j := 0; j < n; j++ {
-				if less(&dist, &dists[j]) {
-					dists[i] = *back
-					copy(dists[j+1:n], dists[j:])
-					dists[j] = dist
-					break
-				}
+		current := &dists[i]
+		if less(current, back) {
+			cand := maxDistsIx(dists[:n-1])
+			if less(current, &dists[cand]) {
+				dists[cand], *back, *current = *current, dists[cand], *back
+			} else {
+				*back, *current = *current, *back
 			}
 		}
 	}
