@@ -151,11 +151,12 @@ func sqrt32(x float32) float32 {
 }
 
 func cosTable(hashNum int) []float32 {
-	ret := make([]float32, hashNum)
+	ret := make([]float32, hashNum+1)
 	ret[0] = 1 // cos(0) == 1
-	for i := 1; i < len(ret); i++ {
+	for i := 1; i < hashNum; i++ {
 		theta := float64(i) * math.Pi / float64(hashNum)
 		ret[i] = float32(math.Cos(theta))
 	}
+	ret[hashNum] = -1 // cos(pi) == -1
 	return ret
 }
