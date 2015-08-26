@@ -156,11 +156,23 @@ func partialSortByDist(dists []IDist, n int) {
 
 func partialInsertionSort(dists []IDist, n int) {
 	len := len(dists)
+	if len <= 1 {
+		return
+	}
 	if len <= n {
 		sort.Sort(sortByDist(dists))
 		return
 	}
+	if n <= 0 {
+		return
+	}
+	if n == 1 {
+		maxIx := maxDistsIx(dists)
+		dists[0], dists[maxIx] = dists[maxIx], dists[0]
+		return
+	}
 
+	// n >= 2 and len > n
 	top := dists[:n]
 	sort.Sort(sortByDist(top))
 	back := &dists[n-1]
@@ -177,6 +189,17 @@ func partialInsertionSort(dists []IDist, n int) {
 			}
 		}
 	}
+}
+
+func maxDistsIx(dists []IDist) int {
+	// len(dists) must >= 1.
+	ix := 0
+	for i := 1; i < len(dists); i++ {
+		if less(&dists[ix], &dists[i]) {
+			ix = i
+		}
+	}
+	return ix
 }
 
 func calcStringHash(s string) uint64 {
