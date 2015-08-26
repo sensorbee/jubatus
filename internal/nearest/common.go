@@ -40,7 +40,7 @@ func rankingHammingBitVectors(bva bitvector.Array, bv *bitvector.Vector, size in
 	len := bva.Len()
 	buf := make([]IDist, len)
 	for i := 0; i < len; i++ {
-		dist, _ := bitvector.HammingDistance(bva, i, bv)
+		dist, _ := bva.HammingDistance(i, bv)
 		buf[i] = IDist{
 			ID:   ID(i + 1),
 			Dist: float32(dist),

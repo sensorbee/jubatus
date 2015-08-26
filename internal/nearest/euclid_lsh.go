@@ -101,7 +101,7 @@ func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size int) []IDist {
 	buf := make([]IDist, len(e.norms))
 	for i := range buf {
-		hDist, _ := bitvector.HammingDistance(e.lshs, i, x)
+		hDist, _ := e.lshs.HammingDistance(i, x)
 		score := e.norms[i] * (e.norms[i] - 2*norm*e.cosTable[hDist])
 		buf[i] = IDist{
 			ID:   ID(i + 1),

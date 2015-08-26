@@ -10,6 +10,7 @@ type Array interface {
 	Resize(n int)
 	Len() int
 	BitNum() int
+	HammingDistance(int, *Vector) (int, error)
 	Get(int) (*Vector, error)
 	Set(int, *Vector) error
 	Save(io.Writer) error
@@ -65,6 +66,10 @@ func (a *GeneralArray) cap() int {
 
 func (a *GeneralArray) BitNum() int {
 	return a.bitNum
+}
+
+func (a *GeneralArray) HammingDistance(n int, v *Vector) (int, error) {
+	return HammingDistance(a, n, v)
 }
 
 func (a *GeneralArray) Get(n int) (*Vector, error) {
