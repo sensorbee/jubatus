@@ -1,6 +1,7 @@
 package bitvector
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"io"
@@ -32,6 +33,10 @@ type arrayData struct {
 func NewArray(bitNum int) Array {
 	if bitNum <= 0 {
 		return nil
+	}
+
+	if bitNum == wordBits {
+		return &WordArray{}
 	}
 
 	return &GeneralArray{
@@ -239,4 +244,62 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 		bitNum: d.BitNum,
 		len:    d.Len,
 	}, nil
+}
+
+type WordArray struct {
+	data buf
+}
+
+func (a *WordArray) Resize(n int) {
+	cap := cap(a.data)
+	if n <= cap {
+		a.data = a.data[:n]
+		return
+	}
+	newBuf := make(buf, n, 2*maxInt(cap, n))
+	copy(newBuf, a.data)
+	a.data = newBuf
+}
+
+func (a *WordArray) Len() int {
+	return len(a.data)
+}
+
+func (a *WordArray) BitNum() int {
+	return wordBits
+}
+
+func (a *WordArray) HammingDistance(n int, v *Vector) (int, error) {
+	if v.bitNum != wordBits {
+		return 0, fmt.Errorf("BitNum mismatch: %v, %v", wordBits, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
+	}
+	return bitcount(a.data[n] ^ v.data[0]), nil
+}
+
+func (a *WordArray) Get(n int) (*Vector, error) {
+	if n < 0 || n >= a.Len() {
+		return nil, fmt.Errorf("invalid Array index: %v", n)
+	}
+	return &Vector{
+		data:   a.data[n : n+1],
+		bitNum: wordBits,
+	}, nil
+}
+
+func (a *WordArray) Set(n int, v *Vector) error {
+	if v.bitNum != wordBits {
+		return fmt.Errorf("BitNum mismatch: %v, %v", wordBits, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return fmt.Errorf("invalid Array index: %v", n)
+	}
+	a.data[n] = v.data[0]
+	return nil
+}
+
+func (a *WordArray) Save(io.Writer) error {
+	return errors.New("TODO: implement")
 }
