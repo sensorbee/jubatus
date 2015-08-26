@@ -103,12 +103,12 @@ func pivot(x, y, z *IDist) IDist {
 }
 
 func partialSortByDist(dists []IDist, n int) {
-	if n <= 32 {
-		partialInsertionSort(dists, n)
-		return
-	}
-
 	for {
+		if n <= 32 {
+			partialInsertionSort(dists, n)
+			return
+		}
+
 		len := len(dists)
 		switch {
 		case len <= 1:
