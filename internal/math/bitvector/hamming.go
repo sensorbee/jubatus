@@ -6,7 +6,7 @@ import (
 )
 
 func HammingDistance(a Array, n int, v *Vector) (int, error) {
-	ga, ok := a.(*GeneralArray)
+	ga, ok := a.(*generalArray)
 	if !ok {
 		return 0, errors.New("HammingDistance is unimplemented for this type of Array.")
 	}
