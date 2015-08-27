@@ -40,7 +40,7 @@ func createArray(data buf, bitNum int, len int) Array {
 
 	if bitNum < wordBits {
 		// 2^n
-		if bitNum^(bitNum-1) == 0 {
+		if bitNum&(bitNum-1) == 0 {
 			return &smallPowerOfTwoBitsArray{
 				data:   data,
 				bitNum: bitNum,
