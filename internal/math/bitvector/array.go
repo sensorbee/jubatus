@@ -30,36 +30,49 @@ type arrayData struct {
 }
 
 func NewArray(bitNum int) Array {
-	if bitNum <= 0 {
+	return createArray(nil, bitNum, 0)
+}
+
+func createArray(data buf, bitNum int, len int) Array {
+	if bitNum <= 0 || len < 0 {
 		return nil
 	}
 
 	if bitNum < wordBits {
 		// 2^n
-		if bitNum&(bitNum-1) == 0 {
+		if bitNum^(bitNum-1) == 0 {
 			return &smallPowerOfTwoBitsArray{
+				data:   data,
 				bitNum: bitNum,
+				len:    len,
 			}
 		}
 		return &smallBitsArray{
 			ga: generalArray{
+				data:   data,
 				bitNum: bitNum,
+				len:    len,
 			},
 		}
 	}
 
 	if bitNum == wordBits {
-		return &wordArray{}
+		return &wordArray{
+			data: data,
+		}
 	}
 
 	if bitNum%wordBits == 0 {
 		return &multipleOfWordBitsArray{
+			data:   data,
 			bitNum: bitNum,
 		}
 	}
 
 	return &generalArray{
+		data:   data,
 		bitNum: bitNum,
+		len:    len,
 	}
 }
 
@@ -259,42 +272,7 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 		return nil, err
 	}
 
-	if d.BitNum < wordBits {
-		// 2^n
-		if d.BitNum&(d.BitNum-1) == 0 {
-			return &smallPowerOfTwoBitsArray{
-				data:   d.Data,
-				bitNum: d.BitNum,
-				len:    d.Len,
-			}, nil
-		}
-		return &smallBitsArray{
-			ga: generalArray{
-				data:   d.Data,
-				bitNum: d.BitNum,
-				len:    d.Len,
-			},
-		}, nil
-	}
-
-	if d.BitNum == wordBits {
-		return &wordArray{
-			data: d.Data,
-		}, nil
-	}
-
-	if d.BitNum%wordBits == 0 {
-		return &multipleOfWordBitsArray{
-			data:   d.Data,
-			bitNum: d.BitNum,
-		}, nil
-	}
-
-	return &generalArray{
-		data:   d.Data,
-		bitNum: d.BitNum,
-		len:    d.Len,
-	}, nil
+	return createArray(d.Data, d.BitNum, d.Len), nil
 }
 
 type smallBitsArray struct {
