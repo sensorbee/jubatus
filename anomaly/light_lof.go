@@ -274,12 +274,6 @@ func (l *LightLOF) collectLRDsImpl(neighbors []nearest.IDist) (float32, []float3
 	return float32(len(neighbors)) / sumReachability, neighborLRDs
 }
 
-func realloc(s []float32, n int) []float32 {
-	ret := make([]float32, n)
-	copy(ret, s)
-	return ret
-}
-
 func calcLOF(lrd float32, neighborLRDs []float32) float32 {
 	if len(neighborLRDs) == 0 {
 		if lrd == 0 {
