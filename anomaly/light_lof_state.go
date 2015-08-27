@@ -142,7 +142,7 @@ func (l *lightLOFState) Write(ctx *core.Context, t *core.Tuple) error {
 		return fmt.Errorf("%s value is not a map: %v", l.featureVectorField, err)
 	}
 
-	_, err = l.lightLOF.AddWithoutCalcScore(FeatureVector(fv))
+	err = l.lightLOF.AddWithoutCalcScore(FeatureVector(fv))
 	return err
 }
 
@@ -173,7 +173,7 @@ func AddAndGetScore(ctx *core.Context, stateName string, featureVector data.Map)
 		return 0, err
 	}
 
-	_, score, err := l.lightLOF.Add(FeatureVector(featureVector))
+	score, err := l.lightLOF.Add(FeatureVector(featureVector))
 	if err != nil {
 		return 0, err
 	}

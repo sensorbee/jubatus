@@ -131,21 +131,7 @@ func loadLightLOFFormatV1(r io.Reader) (*LightLOF, error) {
 	}, nil
 }
 
-func (l *LightLOF) Add(v FeatureVector) (id ID, score float32, err error) {
-	nnfv, err := v.toNNFV()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	l.m.Lock()
-	defer l.m.Unlock()
-
-	id = l.add(nnfv)
-	score = l.calcScoreByID(id)
-	return id, score, nil
-}
-
-func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) (ID, error) {
+func (l *LightLOF) Add(v FeatureVector) (score float32, err error) {
 	nnfv, err := v.toNNFV()
 	if err != nil {
 		return 0, err
@@ -154,7 +140,22 @@ func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) (ID, error) {
 	l.m.Lock()
 	defer l.m.Unlock()
 
-	return l.add(nnfv), nil
+	id := l.add(nnfv)
+	score = l.calcScoreByID(id)
+	return score, nil
+}
+
+func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) error {
+	nnfv, err := v.toNNFV()
+	if err != nil {
+		return err
+	}
+
+	l.m.Lock()
+	defer l.m.Unlock()
+
+	l.add(nnfv)
+	return nil
 }
 
 func (l *LightLOF) add(v nearest.FeatureVector) ID {
