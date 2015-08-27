@@ -35,17 +35,22 @@ func NewArray(bitNum int) Array {
 		return nil
 	}
 
-	if bitNum == wordBits {
-		return &WordArray{}
-	}
-
-	// 2^n
-	if bitNum&(bitNum-1) == 0 {
-		if bitNum < wordBits {
+	if bitNum < wordBits {
+		// 2^n
+		if bitNum&(bitNum-1) == 0 {
 			return &SmallPowerOfTwoArray{
 				bitNum: bitNum,
 			}
 		}
+		return &SmallBitsArray{
+			ga: GeneralArray{
+				bitNum: bitNum,
+			},
+		}
+	}
+
+	if bitNum == wordBits {
+		return &WordArray{}
 	}
 
 	if bitNum%wordBits == 0 {
@@ -259,6 +264,93 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 		bitNum: d.BitNum,
 		len:    d.Len,
 	}, nil
+}
+
+type SmallBitsArray struct {
+	ga GeneralArray
+}
+
+func (a *SmallBitsArray) Resize(n int) {
+	a.ga.Resize(n)
+}
+
+func (a *SmallBitsArray) Len() int {
+	return a.ga.Len()
+}
+
+func (a *SmallBitsArray) BitNum() int {
+	return a.ga.BitNum()
+}
+
+func (a *SmallBitsArray) HammingDistance(n int, v *Vector) (int, error) {
+	if a.BitNum() != v.bitNum {
+		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.BitNum(), v.bitNum)
+	}
+	x, err := a.get(n)
+	if err != nil {
+		return 0, err
+	}
+	return bitcount(x ^ v.data[0]), nil
+}
+
+func (a *SmallBitsArray) Get(n int) (*Vector, error) {
+	x, err := a.get(n)
+	if err != nil {
+		return nil, err
+	}
+	v := NewVector(a.ga.bitNum)
+	v.data[0] = x
+	return v, nil
+}
+
+func (a *SmallBitsArray) get(n int) (word, error) {
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
+	}
+
+	lbit := n * a.BitNum()
+	rbit := lbit + a.BitNum()
+	l := lbit / wordBits
+	r := rbit / wordBits
+	nRightBits := rbit % wordBits
+	loffset := uint(lbit % wordBits)
+
+	if l == r || nRightBits == 0 {
+		x := (a.ga.data[l] >> loffset) & leastBits(a.BitNum())
+		return x, nil
+	}
+
+	x := a.ga.data[r] & leastBits(nRightBits)
+	x |= (a.ga.data[l] >> loffset) << uint(nRightBits)
+	return x, nil
+}
+
+func (a *SmallBitsArray) Set(n int, v *Vector) error {
+	if a.ga.bitNum != v.bitNum {
+		return fmt.Errorf("BitNum mismatch: %v, %v", a.ga.bitNum, v.bitNum)
+	}
+	if n < 0 || n >= a.Len() {
+		return fmt.Errorf("invalid Array index: %v", n)
+	}
+
+	lbit := n * a.BitNum()
+	rbit := lbit + a.BitNum()
+	l := lbit / wordBits
+	r := rbit / wordBits
+	nRightBits := rbit % wordBits
+
+	if l == r || nRightBits == 0 {
+		set(&a.ga.data[l], lbit%wordBits, v.data[0], a.BitNum())
+		return nil
+	}
+
+	set(&a.ga.data[r], 0, v.data[0], nRightBits)
+	set(&a.ga.data[l], lbit%wordBits, v.data[0]>>uint(nRightBits), a.BitNum()-nRightBits)
+	return nil
+}
+
+func (a *SmallBitsArray) Save(io.Writer) error {
+	return errors.New("TODO: implement")
 }
 
 type WordArray struct {
