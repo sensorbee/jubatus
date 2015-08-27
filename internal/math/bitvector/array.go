@@ -53,7 +53,7 @@ func NewArray(bitNum int) Array {
 	}
 
 	if bitNum%wordBits == 0 {
-		return &multileOfWordBitsArray{
+		return &multipleOfWordBitsArray{
 			bitNum: bitNum,
 		}
 	}
@@ -284,7 +284,7 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 	}
 
 	if d.BitNum%wordBits == 0 {
-		return &multileOfWordBitsArray{
+		return &multipleOfWordBitsArray{
 			data:   d.Data,
 			bitNum: d.BitNum,
 		}, nil
@@ -564,12 +564,12 @@ func (a *smallPowerOfTwoArray) Save(w io.Writer) error {
 	return ga.Save(w)
 }
 
-type multileOfWordBitsArray struct {
+type multipleOfWordBitsArray struct {
 	data   buf
 	bitNum int
 }
 
-func (a *multileOfWordBitsArray) Resize(n int) {
+func (a *multipleOfWordBitsArray) Resize(n int) {
 	newLen := n * (a.bitNum / wordBits)
 	cap := cap(a.data)
 	if cap >= newLen {
@@ -581,15 +581,15 @@ func (a *multileOfWordBitsArray) Resize(n int) {
 	a.data = newBuf
 }
 
-func (a *multileOfWordBitsArray) Len() int {
+func (a *multipleOfWordBitsArray) Len() int {
 	return len(a.data) / (a.bitNum / wordBits)
 }
 
-func (a *multileOfWordBitsArray) BitNum() int {
+func (a *multipleOfWordBitsArray) BitNum() int {
 	return a.bitNum
 }
 
-func (a *multileOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error) {
+func (a *multipleOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -605,7 +605,7 @@ func (a *multileOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error) 
 	return ret, nil
 }
 
-func (a *multileOfWordBitsArray) Get(n int) (*Vector, error) {
+func (a *multipleOfWordBitsArray) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.Len() {
 		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
@@ -615,7 +615,7 @@ func (a *multileOfWordBitsArray) Get(n int) (*Vector, error) {
 	return v, nil
 }
 
-func (a *multileOfWordBitsArray) Set(n int, v *Vector) error {
+func (a *multipleOfWordBitsArray) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
 		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -627,7 +627,7 @@ func (a *multileOfWordBitsArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *multileOfWordBitsArray) Save(w io.Writer) error {
+func (a *multipleOfWordBitsArray) Save(w io.Writer) error {
 	ga := &generalArray{
 		data:   a.data,
 		bitNum: a.bitNum,
