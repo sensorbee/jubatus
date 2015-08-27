@@ -442,7 +442,8 @@ func (a *LargePowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
-	if n < 0 || n >= a.Len() {
+	// omit n >= a.Len() because a.Len() is slow.
+	if n < 0 {
 		return 0, fmt.Errorf("invalid Array index: %v", n)
 	}
 	nw := a.bitNum / wordBits
