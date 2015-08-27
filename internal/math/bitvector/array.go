@@ -37,7 +37,7 @@ func NewArray(bitNum int) Array {
 	if bitNum < wordBits {
 		// 2^n
 		if bitNum&(bitNum-1) == 0 {
-			return &smallPowerOfTwoArray{
+			return &smallPowerOfTwoBitsArray{
 				bitNum: bitNum,
 			}
 		}
@@ -262,7 +262,7 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 	if d.BitNum < wordBits {
 		// 2^n
 		if d.BitNum&(d.BitNum-1) == 0 {
-			return &smallPowerOfTwoArray{
+			return &smallPowerOfTwoBitsArray{
 				data:   d.Data,
 				bitNum: d.BitNum,
 				len:    d.Len,
@@ -461,13 +461,13 @@ func (a *wordArray) Save(w io.Writer) error {
 	return ga.Save(w)
 }
 
-type smallPowerOfTwoArray struct {
+type smallPowerOfTwoBitsArray struct {
 	data   buf
 	bitNum int
 	len    int
 }
 
-func (a *smallPowerOfTwoArray) Resize(n int) {
+func (a *smallPowerOfTwoBitsArray) Resize(n int) {
 	newDataLen := nWords(a.bitNum, n)
 	cap := len(a.data)
 	if cap >= newDataLen {
@@ -480,15 +480,15 @@ func (a *smallPowerOfTwoArray) Resize(n int) {
 	a.len = n
 }
 
-func (a *smallPowerOfTwoArray) Len() int {
+func (a *smallPowerOfTwoBitsArray) Len() int {
 	return a.len
 }
 
-func (a *smallPowerOfTwoArray) BitNum() int {
+func (a *smallPowerOfTwoBitsArray) BitNum() int {
 	return a.bitNum
 }
 
-func (a *smallPowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
+func (a *smallPowerOfTwoBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -525,7 +525,7 @@ func (a *smallPowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
 	return 0, fmt.Errorf("invalid BitNum: %v", a.bitNum)
 }
 
-func (a *smallPowerOfTwoArray) Get(n int) (*Vector, error) {
+func (a *smallPowerOfTwoBitsArray) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.Len() {
 		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
@@ -534,13 +534,13 @@ func (a *smallPowerOfTwoArray) Get(n int) (*Vector, error) {
 	return v, nil
 }
 
-func (a *smallPowerOfTwoArray) get(n int) word {
+func (a *smallPowerOfTwoBitsArray) get(n int) word {
 	nelems := wordBits / a.bitNum
 	mask := leastBits(a.bitNum)
 	return (a.data[n/nelems] >> uint(n%nelems*a.bitNum)) & mask
 }
 
-func (a *smallPowerOfTwoArray) Set(n int, v *Vector) error {
+func (a *smallPowerOfTwoBitsArray) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
 		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -555,7 +555,7 @@ func (a *smallPowerOfTwoArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *smallPowerOfTwoArray) Save(w io.Writer) error {
+func (a *smallPowerOfTwoBitsArray) Save(w io.Writer) error {
 	ga := &generalArray{
 		data:   a.data,
 		bitNum: a.bitNum,
