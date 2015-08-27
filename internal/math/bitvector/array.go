@@ -286,9 +286,23 @@ func (a *SmallBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.BitNum() != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.BitNum(), v.bitNum)
 	}
-	x, err := a.get(n)
-	if err != nil {
-		return 0, err
+	if n < 0 || n >= a.Len() {
+		return 0, fmt.Errorf("invalid Array index: %v", n)
+	}
+
+	lbit := n * a.BitNum()
+	rbit := lbit + a.BitNum()
+	l := lbit / wordBits
+	r := rbit / wordBits
+	nRightBits := rbit % wordBits
+	loffset := uint(lbit % wordBits)
+
+	var x word
+	if l == r || nRightBits == 0 {
+		x = (a.ga.data[l] >> loffset) & leastBits(a.BitNum())
+	} else {
+		x = a.ga.data[r] & leastBits(nRightBits)
+		x |= (a.ga.data[l] >> loffset) << uint(nRightBits)
 	}
 	return bitcount(x ^ v.data[0]), nil
 }
