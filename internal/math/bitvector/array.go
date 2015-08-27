@@ -38,6 +38,7 @@ func NewArray(bitNum int) Array {
 	if bitNum == wordBits {
 		return &WordArray{}
 	}
+
 	// 2^n
 	if bitNum&(bitNum-1) == 0 {
 		if bitNum < wordBits {
@@ -45,7 +46,10 @@ func NewArray(bitNum int) Array {
 				bitNum: bitNum,
 			}
 		}
-		return &LargePowerOfTwoArray{
+	}
+
+	if bitNum%wordBits == 0 {
+		return &MultileOfWordBitsArray{
 			bitNum: bitNum,
 		}
 	}
@@ -413,12 +417,12 @@ func (a *SmallPowerOfTwoArray) Save(io.Writer) error {
 	return errors.New("TODO: implement")
 }
 
-type LargePowerOfTwoArray struct {
+type MultileOfWordBitsArray struct {
 	data   buf
 	bitNum int
 }
 
-func (a *LargePowerOfTwoArray) Resize(n int) {
+func (a *MultileOfWordBitsArray) Resize(n int) {
 	newLen := n * (a.bitNum / wordBits)
 	cap := cap(a.data)
 	if cap >= newLen {
@@ -430,15 +434,15 @@ func (a *LargePowerOfTwoArray) Resize(n int) {
 	a.data = newBuf
 }
 
-func (a *LargePowerOfTwoArray) Len() int {
+func (a *MultileOfWordBitsArray) Len() int {
 	return len(a.data) / (a.bitNum / wordBits)
 }
 
-func (a *LargePowerOfTwoArray) BitNum() int {
+func (a *MultileOfWordBitsArray) BitNum() int {
 	return a.bitNum
 }
 
-func (a *LargePowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
+func (a *MultileOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -454,7 +458,7 @@ func (a *LargePowerOfTwoArray) HammingDistance(n int, v *Vector) (int, error) {
 	return ret, nil
 }
 
-func (a *LargePowerOfTwoArray) Get(n int) (*Vector, error) {
+func (a *MultileOfWordBitsArray) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.Len() {
 		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
@@ -464,7 +468,7 @@ func (a *LargePowerOfTwoArray) Get(n int) (*Vector, error) {
 	return v, nil
 }
 
-func (a *LargePowerOfTwoArray) Set(n int, v *Vector) error {
+func (a *MultileOfWordBitsArray) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
 		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -476,6 +480,6 @@ func (a *LargePowerOfTwoArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *LargePowerOfTwoArray) Save(io.Writer) error {
+func (a *MultileOfWordBitsArray) Save(io.Writer) error {
 	return errors.New("TODO: implement")
 }
