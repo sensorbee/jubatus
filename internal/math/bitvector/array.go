@@ -1,7 +1,6 @@
 package bitvector
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ugorji/go/codec"
 	"io"
@@ -259,6 +258,38 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
+
+	if d.BitNum < wordBits {
+		// 2^n
+		if d.BitNum&(d.BitNum-1) == 0 {
+			return &SmallPowerOfTwoArray{
+				data:   d.Data,
+				bitNum: d.BitNum,
+				len:    d.Len,
+			}, nil
+		}
+		return &SmallBitsArray{
+			ga: GeneralArray{
+				data:   d.Data,
+				bitNum: d.BitNum,
+				len:    d.Len,
+			},
+		}, nil
+	}
+
+	if d.BitNum == wordBits {
+		return &WordArray{
+			data: d.Data,
+		}, nil
+	}
+
+	if d.BitNum%wordBits == 0 {
+		return &MultileOfWordBitsArray{
+			data:   d.Data,
+			bitNum: d.BitNum,
+		}, nil
+	}
+
 	return &GeneralArray{
 		data:   d.Data,
 		bitNum: d.BitNum,
@@ -363,8 +394,8 @@ func (a *SmallBitsArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *SmallBitsArray) Save(io.Writer) error {
-	return errors.New("TODO: implement")
+func (a *SmallBitsArray) Save(w io.Writer) error {
+	return a.ga.Save(w)
 }
 
 type WordArray struct {
@@ -421,8 +452,13 @@ func (a *WordArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *WordArray) Save(io.Writer) error {
-	return errors.New("TODO: implement")
+func (a *WordArray) Save(w io.Writer) error {
+	ga := &GeneralArray{
+		data:   a.data,
+		bitNum: wordBits,
+		len:    len(a.data),
+	}
+	return ga.Save(w)
 }
 
 type SmallPowerOfTwoArray struct {
@@ -519,8 +555,13 @@ func (a *SmallPowerOfTwoArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *SmallPowerOfTwoArray) Save(io.Writer) error {
-	return errors.New("TODO: implement")
+func (a *SmallPowerOfTwoArray) Save(w io.Writer) error {
+	ga := &GeneralArray{
+		data:   a.data,
+		bitNum: a.bitNum,
+		len:    a.len,
+	}
+	return ga.Save(w)
 }
 
 type MultileOfWordBitsArray struct {
@@ -586,6 +627,11 @@ func (a *MultileOfWordBitsArray) Set(n int, v *Vector) error {
 	return nil
 }
 
-func (a *MultileOfWordBitsArray) Save(io.Writer) error {
-	return errors.New("TODO: implement")
+func (a *MultileOfWordBitsArray) Save(w io.Writer) error {
+	ga := &GeneralArray{
+		data:   a.data,
+		bitNum: a.bitNum,
+		len:    a.Len(),
+	}
+	return ga.Save(w)
 }
