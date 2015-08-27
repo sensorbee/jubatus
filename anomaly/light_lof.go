@@ -183,15 +183,6 @@ func (l *LightLOF) calcScoreByID(id ID) float32 {
 	return calcLOF(lrd, neighborLRDs)
 }
 
-func (l *LightLOF) GetAllRows() []ID {
-	// TODO: implement
-	return nil
-}
-
-func (l *LightLOF) Clear() {
-	// TODO: implement
-}
-
 func (l *LightLOF) setRow(v nearest.FeatureVector) {
 	nnID := nearest.ID(len(l.kdists))
 	l.nn.SetRow(nnID, v)
