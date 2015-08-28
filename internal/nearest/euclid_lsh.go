@@ -99,21 +99,12 @@ func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 }
 
 func (e *EuclidLSH) neighborRowFromHash(x *bit.Vector, norm float32, size int) []IDist {
-	buf := make([]IDist, len(e.norms))
-	for i := range buf {
-		hDist, _ := e.lshs.HammingDistance(i, x)
-		score := e.norms[i] * (e.norms[i] - 2*norm*e.cosTable[hDist])
-		buf[i] = IDist{
-			ID:   ID(i + 1),
-			Dist: score,
-		}
-	}
-	partialSortByDist(buf, size)
+	buf := e.lshs.CalcEuclidLSHScoreAndSortPartially(x, norm, e.norms, e.cosTable, size)
 	ret := make([]IDist, minInt(size, len(buf)))
 	squaredNorm := norm * norm
 	for i := 0; i < len(ret); i++ {
 		ret[i] = IDist{
-			ID:   buf[i].ID,
+			ID:   ID(buf[i].ID),
 			Dist: sqrt32(squaredNorm + buf[i].Dist),
 		}
 	}
