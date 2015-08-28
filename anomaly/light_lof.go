@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/nearest"
+	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
@@ -296,18 +297,12 @@ func calcLOF(lrd float32, neighborLRDs []float32) float32 {
 type FeatureVector data.Map
 
 func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
-	ret := make(nearest.FeatureVector, len(v))
-	i := 0
-	for k, v := range v {
-		x, err := data.ToFloat(v)
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = nearest.FeatureElement{
-			Dim:   k,
-			Value: float32(x),
-		}
-		i++
+	ret := make(nearest.FeatureVector, 0, len(v))
+	err := nested.Flatten(data.Map(v), func(key string, value float32) {
+		ret = append(ret, nearest.FeatureElement{Dim: key, Value: value})
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
