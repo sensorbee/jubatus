@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"pfi/sensorbee/jubatus/internal/intern"
+	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
@@ -180,7 +181,7 @@ type FeatureVector data.Map
 // toInternalForScores converts a feature vector to internal format. It requires read lock for intern.
 func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForScores, error) {
 	ret := make(fVectorForScores, 0, len(v))
-	err := toInternalImpl("", data.Map(v), func(key string, value float32) {
+	err := nested.Flatten(data.Map(v), func(key string, value float32) {
 		if d := intern.GetOrZero(key); d != 0 {
 			ret = append(ret, fElement{dim(d), value})
 		}
@@ -194,7 +195,7 @@ func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForSco
 // toInternal converts a feature vector to internal format. It requires write lock for intern.
 func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
 	full := make(fVector, len(v))
-	err := toInternalImpl("", data.Map(v), func(key string, value float32) {
+	err := nested.Flatten(data.Map(v), func(key string, value float32) {
 		full = append(full, fElement{dim(intern.Get(key)), value})
 	})
 	if err != nil {
