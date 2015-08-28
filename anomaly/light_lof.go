@@ -21,6 +21,7 @@ type LightLOF struct {
 	kdists []float32
 	lrds   []float32
 
+	// for random unlearner
 	maxSize int
 	rg      *rand.Rand
 
