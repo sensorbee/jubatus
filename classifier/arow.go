@@ -206,26 +206,6 @@ func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVec
 
 type appender func(string, float32)
 
-func toInternalImpl(keyPrefix string, v data.Map, ap appender) error {
-	for f, val := range v {
-		if m, err := data.AsMap(val); err == nil {
-			err := toInternalImpl(fmt.Sprint(keyPrefix, f, "\x00"), m, ap)
-			if err != nil {
-				return err
-			}
-		} else {
-			xx, err := data.ToFloat(val)
-			if err != nil {
-				// TODO: return better error
-				return err
-			}
-			x := float32(xx)
-			ap(keyPrefix+f, x)
-		}
-	}
-	return nil
-}
-
 type dim int
 type fElement struct {
 	dim   dim
