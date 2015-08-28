@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/math/bitvector"
+	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type Minhash struct {
-	data bitvector.Array
+	data bit.Array
 }
 
 const (
@@ -17,7 +17,7 @@ const (
 
 func NewMinhash(bitNum int) *Minhash {
 	return &Minhash{
-		data: bitvector.NewArray(bitNum),
+		data: bit.NewArray(bitNum),
 	}
 }
 
@@ -47,7 +47,7 @@ func loadMinhash(r io.Reader) (*Minhash, error) {
 }
 
 func loadMinhashFormatV1(r io.Reader) (*Minhash, error) {
-	data, err := bitvector.LoadArray(r)
+	data, err := bit.LoadArray(r)
 	if err != nil {
 		return nil, err
 	}
@@ -70,11 +70,11 @@ func (m *Minhash) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 	return m.neighborRowFromHash(m.hash(v), size)
 }
 
-func (m *Minhash) neighborRowFromHash(x *bitvector.Vector, size int) []IDist {
+func (m *Minhash) neighborRowFromHash(x *bit.Vector, size int) []IDist {
 	return rankingHammingBitVectors(m.data, x, size)
 }
 
-func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
+func (m *Minhash) hash(v FeatureVector) *bit.Vector {
 	bitNum := m.data.BitNum()
 	minValues := generateMinValuesBuffer(bitNum)
 	hashes := make([]uint64, bitNum)
@@ -91,7 +91,7 @@ func (m *Minhash) hash(v FeatureVector) *bitvector.Vector {
 		}
 	}
 
-	bv := bitvector.NewVector(bitNum)
+	bv := bit.NewVector(bitNum)
 	for i := 0; i < len(hashes); i++ {
 		if (hashes[i] & 1) == 1 {
 			bv.Set(i)

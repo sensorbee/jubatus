@@ -5,11 +5,11 @@ import (
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/math/bitvector"
+	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type EuclidLSH struct {
-	lshs  bitvector.Array
+	lshs  bit.Array
 	norms []float32
 
 	cosTable []float32
@@ -27,7 +27,7 @@ const (
 
 func NewEuclidLSH(hashNum int) *EuclidLSH {
 	return &EuclidLSH{
-		lshs: bitvector.NewArray(hashNum),
+		lshs: bit.NewArray(hashNum),
 
 		cosTable: cosTable(hashNum),
 	}
@@ -68,7 +68,7 @@ func loadEuclidLSHFormatV1(r io.Reader) (*EuclidLSH, error) {
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
-	lshs, err := bitvector.LoadArray(r)
+	lshs, err := bit.LoadArray(r)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (e *EuclidLSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 	return e.neighborRowFromHash(cosineLSH(v, e.lshs.BitNum()), l2Norm(v), size)
 }
 
-func (e *EuclidLSH) neighborRowFromHash(x *bitvector.Vector, norm float32, size int) []IDist {
+func (e *EuclidLSH) neighborRowFromHash(x *bit.Vector, norm float32, size int) []IDist {
 	buf := make([]IDist, len(e.norms))
 	for i := range buf {
 		hDist, _ := e.lshs.HammingDistance(i, x)

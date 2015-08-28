@@ -3,11 +3,11 @@ package nearest
 import (
 	"fmt"
 	"io"
-	"pfi/sensorbee/jubatus/internal/math/bitvector"
+	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type LSH struct {
-	data bitvector.Array
+	data bit.Array
 }
 
 const (
@@ -16,7 +16,7 @@ const (
 
 func NewLSH(bitNum int) *LSH {
 	return &LSH{
-		data: bitvector.NewArray(bitNum),
+		data: bit.NewArray(bitNum),
 	}
 }
 
@@ -46,7 +46,7 @@ func loadLSH(r io.Reader) (*LSH, error) {
 }
 
 func loadLSHFormatV1(r io.Reader) (*LSH, error) {
-	data, err := bitvector.LoadArray(r)
+	data, err := bit.LoadArray(r)
 	if err != nil {
 		return nil, err
 	}
@@ -69,10 +69,10 @@ func (l *LSH) NeighborRowFromFV(v FeatureVector, size int) []IDist {
 	return l.neighborRowFromFV(l.hash(v), size)
 }
 
-func (l *LSH) neighborRowFromFV(x *bitvector.Vector, size int) []IDist {
+func (l *LSH) neighborRowFromFV(x *bit.Vector, size int) []IDist {
 	return rankingHammingBitVectors(l.data, x, size)
 }
 
-func (l *LSH) hash(v FeatureVector) *bitvector.Vector {
+func (l *LSH) hash(v FeatureVector) *bit.Vector {
 	return cosineLSH(v, l.data.BitNum())
 }

@@ -1,4 +1,4 @@
-package bitvector
+package bit
 
 import (
 	"bytes"

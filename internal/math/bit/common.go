@@ -1,4 +1,4 @@
-package bitvector
+package bit
 
 // word is uint64 for serialization.
 // This may be changed to uintptr.

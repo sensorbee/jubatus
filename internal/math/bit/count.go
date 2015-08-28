@@ -1,4 +1,4 @@
-package bitvector
+package bit
 
 func bitcount(x word) int {
 	return int(bitcountTable[x&bitcountMask]) + int(bitcountTable[x>>16&bitcountMask]) +

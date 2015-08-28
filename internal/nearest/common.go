@@ -2,11 +2,11 @@ package nearest
 
 import (
 	"math/rand"
-	"pfi/sensorbee/jubatus/internal/math/bitvector"
+	"pfi/sensorbee/jubatus/internal/math/bit"
 	"sort"
 )
 
-func cosineLSH(v FeatureVector, hashNum int) *bitvector.Vector {
+func cosineLSH(v FeatureVector, hashNum int) *bit.Vector {
 	return binarize(randomProjection(v, hashNum))
 }
 
@@ -26,8 +26,8 @@ func randomProjection(v FeatureVector, hashNum int) []float32 {
 	return proj
 }
 
-func binarize(proj []float32) *bitvector.Vector {
-	ret := bitvector.NewVector(len(proj))
+func binarize(proj []float32) *bit.Vector {
+	ret := bit.NewVector(len(proj))
 	for i, x := range proj {
 		if x > 0 {
 			ret.Set(i)
@@ -36,7 +36,7 @@ func binarize(proj []float32) *bitvector.Vector {
 	return ret
 }
 
-func rankingHammingBitVectors(bva bitvector.Array, bv *bitvector.Vector, size int) []IDist {
+func rankingHammingBitVectors(bva bit.Array, bv *bit.Vector, size int) []IDist {
 	len := bva.Len()
 	buf := make([]IDist, len)
 	for i := 0; i < len; i++ {
