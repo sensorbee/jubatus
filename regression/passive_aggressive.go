@@ -6,6 +6,7 @@ import (
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
+	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
@@ -207,12 +208,11 @@ type FeatureVector data.Map
 
 func (v FeatureVector) toInternal() (fVector, error) {
 	ret := make(fVector, 0, len(v))
-	for k, v := range v {
-		x, err := data.ToFloat(v)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, fElement{dim(k), float32(x)})
+	err := nested.Flatten(data.Map(v), func(key string, value float32) {
+		ret = append(ret, fElement{dim: dim(key), value: value})
+	})
+	if err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
