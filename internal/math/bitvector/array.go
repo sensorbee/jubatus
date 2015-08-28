@@ -120,17 +120,6 @@ func (a *generalArray) Get(n int) (*Vector, error) {
 	l := lbit / wordBits
 	r := rbit / wordBits
 
-	// the bitvector is stored in a word.
-	if l == r || (l+1 == r && rbit%wordBits == 0) {
-		mask := leastBits(a.bitNum)
-		shift := word(lbit) % wordBits
-		x := (a.data[l] >> shift) & mask
-		return &Vector{
-			data:   buf{x},
-			bitNum: a.bitNum,
-		}, nil
-	}
-
 	// the bit vector starts from the least bit in a word.
 	if lbit%wordBits == 0 {
 		retLen := nWords(a.bitNum, 1)
@@ -138,9 +127,7 @@ func (a *generalArray) Get(n int) (*Vector, error) {
 		copy(retBuf, a.data[l:])
 
 		nTrailingBits := rbit % wordBits
-		if nTrailingBits != 0 {
-			retBuf[retLen-1] &= leastBits(nTrailingBits)
-		}
+		retBuf[retLen-1] &= leastBits(nTrailingBits)
 
 		return &Vector{
 			data:   retBuf,
@@ -190,17 +177,7 @@ func (a *generalArray) Set(n int, v *Vector) error {
 	l := lbit / wordBits
 	r := rbit / wordBits
 
-	// v will be stored in a word.
-	if l == r || (l+1 == r && rbit%wordBits == 0) {
-		set(&a.data[l], lbit%wordBits, v.data[0], a.bitNum)
-		return nil
-	}
-
 	if lbit%wordBits == 0 {
-		if rbit%wordBits == 0 {
-			copy(a.data[l:], v.data)
-			return nil
-		}
 		len := len(v.data)
 		copy(a.data[l:], v.data[:len-1])
 		set(&a.data[r], 0, v.data[len-1], a.bitNum%wordBits)

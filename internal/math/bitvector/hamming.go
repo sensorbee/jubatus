@@ -24,22 +24,14 @@ func HammingDistance(a Array, n int, v *Vector) (int, error) {
 
 	nRightBits := rbit % wordBits
 
-	if l == r || (l+1 == r && nRightBits == 0) {
-		offset := lbit % wordBits
-		x := (ga.data[l] >> uint(offset)) & leastBits(ga.bitNum)
-		return bitcount(x ^ word(v.getAsUint64(0))), nil
-	}
-
 	if lbit%wordBits == 0 {
 		x := ga.data[l:]
 		ret := 0
 		for i := 0; i < r-l; i++ {
 			ret += bitcount(x[i] ^ v.data[i])
 		}
-		if nRightBits != 0 {
-			last := r - l
-			ret += bitcount((x[last] & leastBits(nRightBits)) ^ v.data[last])
-		}
+		last := r - l
+		ret += bitcount((x[last] & leastBits(nRightBits)) ^ v.data[last])
 		return ret, nil
 	}
 
