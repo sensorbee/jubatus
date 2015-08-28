@@ -30,6 +30,18 @@ func ExtractParamAsString(params data.Map, key string) (string, error) {
 	return s, nil
 }
 
+func ExtractParamAsIntWithDefault(params data.Map, key string, def int64) (int64, error) {
+	v, ok := params[key]
+	if !ok {
+		return def, nil
+	}
+	x, err := data.AsInt(v)
+	if err != nil {
+		return 0, fmt.Errorf("%s parameter is not an integer: %v", key, err)
+	}
+	return x, nil
+}
+
 func ExtractParamAsInt(params data.Map, key string) (int64, error) {
 	v, ok := params[key]
 	if !ok {

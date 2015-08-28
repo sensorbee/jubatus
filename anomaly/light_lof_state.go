@@ -71,8 +71,32 @@ func (c *LightLOFStateCreator) CreateState(ctx *core.Context, params data.Map) (
 		return nil, err
 	}
 
+	unlearn, err := pluginutil.ExtractParamAsStringWithDefault(params, "unlearner", "no")
+	if err != nil {
+		return nil, err
+	}
+	var maxSize int
+	var seed int64
+	switch unlearn {
+	case "no":
+		maxSize = int(^uint(0) / 2)
+	case "random":
+		m, err := pluginutil.ExtractParamAsInt(params, "max_size")
+		if err != nil {
+			return nil, err
+		}
+		maxSize = int(m)
+
+		seed, err = pluginutil.ExtractParamAsIntWithDefault(params, "seed", 0)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("invalid unlearner: %v", unlearn)
+	}
+
 	// TODO: check hashNum, nnNum, rnnNum <= INT_MAX
-	llof, err := NewLightLOF(nnAlgo, int(hashNum), int(nnNum), int(rnnNum))
+	llof, err := NewLightLOF(nnAlgo, int(hashNum), int(nnNum), int(rnnNum), maxSize, seed)
 	if err != nil {
 		return nil, err
 	}

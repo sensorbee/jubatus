@@ -46,7 +46,15 @@ func TestLightLOFStaateSaveLoad(t *testing.T) {
 					l2, err := c.LoadState(ctx, buf, data.Map{})
 					So(err, ShouldBeNil)
 
-					So(l2, ShouldResemble, l)
+					m := l.lightLOF
+					m2 := l2.(*lightLOFState).lightLOF
+					So(m2.nn, ShouldResemble, m.nn)
+					So(m2.nnNum, ShouldEqual, m.nnNum)
+					So(m2.rnnNum, ShouldEqual, m.rnnNum)
+					So(m2.kdists, ShouldResemble, m.kdists)
+					So(m2.lrds, ShouldResemble, m.lrds)
+					So(m2.maxSize, ShouldEqual, m.maxSize)
+					So(m2.rg, ShouldNotBeNil)
 
 					fv := FeatureVector(data.Map{"n": data.Int(10)})
 					s, err := l.lightLOF.CalcScore(fv)

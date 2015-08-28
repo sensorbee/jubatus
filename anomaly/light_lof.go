@@ -6,6 +6,7 @@ import (
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
+	"math/rand"
 	"pfi/sensorbee/jubatus/internal/nearest"
 	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
@@ -20,6 +21,9 @@ type LightLOF struct {
 	kdists []float32
 	lrds   []float32
 
+	maxSize int
+	rg      *rand.Rand
+
 	m sync.RWMutex
 }
 
@@ -32,7 +36,7 @@ const (
 
 type NNAlgorithm int
 
-func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, error) {
+func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed int64) (*LightLOF, error) {
 	if hashNum <= 0 {
 		return nil, errors.New("number of hash bits must be greater than zero")
 	}
@@ -56,9 +60,11 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum int) (*LightLOF, err
 	}
 
 	return &LightLOF{
-		nn:     nn,
-		nnNum:  nnNum,
-		rnnNum: rnnNum,
+		nn:      nn,
+		nnNum:   nnNum,
+		rnnNum:  rnnNum,
+		maxSize: maxSize,
+		rg:      rand.New(rand.NewSource(seed)),
 	}, nil
 }
 
@@ -74,6 +80,8 @@ type lightLOFMsgpack struct {
 
 	KDists []float32
 	LRDs   []float32
+
+	MaxSize int
 }
 
 func (l *LightLOF) Save(w io.Writer) error {
@@ -91,6 +99,8 @@ func (l *LightLOF) Save(w io.Writer) error {
 
 		KDists: l.kdists,
 		LRDs:   l.lrds,
+
+		MaxSize: l.maxSize,
 	}); err != nil {
 		return err
 	}
@@ -129,6 +139,9 @@ func loadLightLOFFormatV1(r io.Reader) (*LightLOF, error) {
 
 		kdists: m.KDists,
 		lrds:   m.LRDs,
+
+		maxSize: m.MaxSize,
+		rg:      rand.New(rand.NewSource(0)),
 	}, nil
 }
 
@@ -160,33 +173,17 @@ func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) error {
 }
 
 func (l *LightLOF) add(v nearest.FeatureVector) ID {
-	l.kdists = append(l.kdists, 0)
-	l.lrds = append(l.lrds, 0)
-	l.setRow(v)
-
-	return ID(len(l.kdists))
-}
-
-func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
-	nnFV, err := v.toNNFV()
-	if err != nil {
-		return 0, err
+	var nnID nearest.ID
+	if len(l.kdists) <= l.maxSize {
+		l.kdists = append(l.kdists, 0)
+		l.lrds = append(l.lrds, 0)
+		nnID = nearest.ID(len(l.kdists))
+	} else {
+		// unlearn
+		nnID = nearest.ID(l.rg.Intn(l.maxSize)) + 1
+		l.kdists[nnID-1] = 0
+		l.lrds[nnID-1] = 0
 	}
-
-	l.m.RLock()
-	defer l.m.RUnlock()
-
-	lrd, neighborLRDs := l.collectLRDs(nnFV)
-	return calcLOF(lrd, neighborLRDs), nil
-}
-
-func (l *LightLOF) calcScoreByID(id ID) float32 {
-	lrd, neighborLRDs := l.collectLRDsByID(id)
-	return calcLOF(lrd, neighborLRDs)
-}
-
-func (l *LightLOF) setRow(v nearest.FeatureVector) {
-	nnID := nearest.ID(len(l.kdists))
 	l.nn.SetRow(nnID, v)
 
 	neighbors := l.nn.NeighborRowFromID(nnID, l.rnnNum)
@@ -219,6 +216,26 @@ func (l *LightLOF) setRow(v nearest.FeatureVector) {
 		}
 		l.lrds[id-1] = lrd
 	}
+
+	return ID(nnID)
+}
+
+func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
+	nnFV, err := v.toNNFV()
+	if err != nil {
+		return 0, err
+	}
+
+	l.m.RLock()
+	defer l.m.RUnlock()
+
+	lrd, neighborLRDs := l.collectLRDs(nnFV)
+	return calcLOF(lrd, neighborLRDs), nil
+}
+
+func (l *LightLOF) calcScoreByID(id ID) float32 {
+	lrd, neighborLRDs := l.collectLRDsByID(id)
+	return calcLOF(lrd, neighborLRDs)
 }
 
 func (l *LightLOF) collectLRDs(v nearest.FeatureVector) (float32, []float32) {
