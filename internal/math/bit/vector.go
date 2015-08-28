@@ -28,3 +28,12 @@ func (v *Vector) Set(n int) error {
 	v.data[n/wordBits] |= 1 << uint(n%wordBits)
 	return nil
 }
+
+func (v *Vector) reverse(n int) error {
+	if n < 0 || n >= v.bitNum {
+		return fmt.Errorf("invalid Vector index: %v", n)
+	}
+
+	v.data[n/wordBits] ^= 1 << uint(n%wordBits)
+	return nil
+}
