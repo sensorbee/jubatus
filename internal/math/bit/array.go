@@ -16,7 +16,7 @@ type Array interface {
 	Save(io.Writer) error
 }
 
-type generalArray struct {
+type largeBitsArray struct {
 	data   buf
 	bitNum int
 	len    int
@@ -48,7 +48,7 @@ func createArray(data buf, bitNum int, len int) Array {
 			}
 		}
 		return &smallBitsArray{
-			ga: generalArray{
+			ga: largeBitsArray{
 				data:   data,
 				bitNum: bitNum,
 				len:    len,
@@ -69,19 +69,19 @@ func createArray(data buf, bitNum int, len int) Array {
 		}
 	}
 
-	return &generalArray{
+	return &largeBitsArray{
 		data:   data,
 		bitNum: bitNum,
 		len:    len,
 	}
 }
 
-func (a *generalArray) Resize(n int) {
+func (a *largeBitsArray) Resize(n int) {
 	a.reserve(n)
 	a.len = n
 }
 
-func (a *generalArray) reserve(n int) {
+func (a *largeBitsArray) reserve(n int) {
 	currCap := a.cap()
 	if n <= currCap {
 		return
@@ -93,19 +93,19 @@ func (a *generalArray) reserve(n int) {
 	a.data = newBuf
 }
 
-func (a *generalArray) Len() int {
+func (a *largeBitsArray) Len() int {
 	return a.len
 }
 
-func (a *generalArray) cap() int {
+func (a *largeBitsArray) cap() int {
 	return len(a.data) * wordBits / a.bitNum
 }
 
-func (a *generalArray) BitNum() int {
+func (a *largeBitsArray) BitNum() int {
 	return a.bitNum
 }
 
-func (a *generalArray) HammingDistance(n int, v *Vector) (int, error) {
+func (a *largeBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 	if a.bitNum != v.bitNum {
 		return 0, fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -153,7 +153,7 @@ func (a *generalArray) HammingDistance(n int, v *Vector) (int, error) {
 	return ret, nil
 }
 
-func (a *generalArray) Get(n int) (*Vector, error) {
+func (a *largeBitsArray) Get(n int) (*Vector, error) {
 	if n < 0 || n >= a.len {
 		return nil, fmt.Errorf("invalid Array index: %v", n)
 	}
@@ -207,7 +207,7 @@ func (a *generalArray) Get(n int) (*Vector, error) {
 	}, nil
 }
 
-func (a *generalArray) Set(n int, v *Vector) error {
+func (a *largeBitsArray) Set(n int, v *Vector) error {
 	if a.bitNum != v.bitNum {
 		return fmt.Errorf("BitNum mismatch: %v, %v", a.bitNum, v.bitNum)
 	}
@@ -256,7 +256,7 @@ var arrayMsgpackHandle = &codec.MsgpackHandle{
 	RawToString: true,
 }
 
-func (a *generalArray) Save(w io.Writer) error {
+func (a *largeBitsArray) Save(w io.Writer) error {
 	if _, err := w.Write([]byte{arrayFormatVersion}); err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func loadArrayFormatV1(r io.Reader) (Array, error) {
 }
 
 type smallBitsArray struct {
-	ga generalArray
+	ga largeBitsArray
 }
 
 func (a *smallBitsArray) Resize(n int) {
@@ -452,7 +452,7 @@ func (a *wordArray) Set(n int, v *Vector) error {
 }
 
 func (a *wordArray) Save(w io.Writer) error {
-	ga := &generalArray{
+	ga := &largeBitsArray{
 		data:   a.data,
 		bitNum: wordBits,
 		len:    len(a.data),
@@ -555,7 +555,7 @@ func (a *smallPowerOfTwoBitsArray) Set(n int, v *Vector) error {
 }
 
 func (a *smallPowerOfTwoBitsArray) Save(w io.Writer) error {
-	ga := &generalArray{
+	ga := &largeBitsArray{
 		data:   a.data,
 		bitNum: a.bitNum,
 		len:    a.len,
@@ -627,7 +627,7 @@ func (a *multipleOfWordBitsArray) Set(n int, v *Vector) error {
 }
 
 func (a *multipleOfWordBitsArray) Save(w io.Writer) error {
-	ga := &generalArray{
+	ga := &largeBitsArray{
 		data:   a.data,
 		bitNum: a.bitNum,
 		len:    a.Len(),
