@@ -194,7 +194,7 @@ func (v FeatureVector) toInternalForScores(intern *intern.Intern) (fVectorForSco
 
 // toInternal converts a feature vector to internal format. It requires write lock for intern.
 func (v FeatureVector) toInternal(intern *intern.Intern) (fVectorForScores, fVector, error) {
-	full := make(fVector, len(v))
+	full := make(fVector, 0, len(v))
 	err := nested.Flatten(data.Map(v), func(key string, value float32) {
 		full = append(full, fElement{dim(intern.Get(key)), value})
 	})
