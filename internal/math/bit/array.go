@@ -440,7 +440,18 @@ func (a *wordArray) HammingDistance(n int, v *Vector) (int, error) {
 }
 
 func (a *wordArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
+	buf := make([]IDist, len(norms))
+	m := x.data[0]
+	for i := range buf {
+		hDist := bitcount(a.data[i] ^ m)
+		score := calcEuclidLSHScore(norms[i], norm, cosTable[hDist])
+		buf[i] = IDist{
+			ID:   ID(i + 1),
+			Dist: score,
+		}
+	}
+	partialSortByDist(buf, n)
+	return buf
 }
 
 func (a *wordArray) Get(n int) (*Vector, error) {
@@ -651,7 +662,21 @@ func (a *multipleOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error)
 }
 
 func (a *multipleOfWordBitsArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
+	buf := make([]IDist, len(norms))
+	nWords := a.bitNum / wordBits
+	for i := range buf {
+		var hDist int
+		for j := range x.data {
+			hDist += bitcount(a.data[nWords*i+j] ^ x.data[j])
+		}
+		score := calcEuclidLSHScore(norms[i], norm, cosTable[hDist])
+		buf[i] = IDist{
+			ID:   ID(i + 1),
+			Dist: score,
+		}
+	}
+	partialSortByDist(buf, n)
+	return buf
 }
 
 func (a *multipleOfWordBitsArray) Get(n int) (*Vector, error) {
