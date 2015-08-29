@@ -1,12 +1,22 @@
 package bit
 
 func bitcount(x word) int {
-	return int(bitcountTable[x&bitcountMask]) + int(bitcountTable[x>>16&bitcountMask]) +
-		int(bitcountTable[x>>32&bitcountMask]) + int(bitcountTable[x>>48])
+	x -= (x >> 1) & 0x5555555555555555
+	x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333)
+	x = (x + (x >> 4)) & 0x0F0F0F0F0F0F0F0F
+	x += x >> 8
+	x += x >> 16
+	x += x >> 32
+	return int(x & 0x7F)
 }
 
 func bitcount32(x uint32) int {
-	return int(bitcountTable[x&uint32(bitcountMask)]) + int(bitcountTable[x>>16])
+	n := (x >> 1) & 033333333333
+	x -= n
+	n = (n >> 1) & 033333333333
+	x -= n
+	x = (x + (x >> 3)) & 030707070707
+	return int(x % 63)
 }
 
 func bitcount32s(x uint64) (int, int) {
@@ -19,21 +29,9 @@ func bitcount32s(x uint64) (int, int) {
 }
 
 func bitcount16(x uint16) int {
-	return int(bitcountTable[x])
-}
-
-const bitcountMask = word(^uint16(0))
-
-var bitcountTable = [bitcountMask + 1]uint8{}
-
-func init() {
-	for i := range bitcountTable {
-		var cnt uint8
-		n := i
-		for n != 0 {
-			cnt++
-			n &= n - 1
-		}
-		bitcountTable[i] = cnt
-	}
+	x -= (x >> 1) & 0x5555
+	x = (x & 0x3333) + ((x >> 2) & 0x3333)
+	x = (x + (x >> 4)) & 0x0F0F
+	x += x >> 8
+	return int(x & 0x1F)
 }
