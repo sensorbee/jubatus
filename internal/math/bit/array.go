@@ -527,15 +527,15 @@ func (a *smallPowerOfTwoBitsArray) HammingDistance(n int, v *Vector) (int, error
 	case 2:
 		full := a.data[n/32]
 		part := (full >> uint(2*(n%32))) & 3
-		return bitcount16(uint16(part ^ v.data[0])), nil
+		return bitcount8(uint8(part ^ v.data[0])), nil
 	case 4:
 		full := a.data[n/16]
 		part := (full >> uint(4*(n%16))) & 0xF
-		return bitcount16(uint16(part ^ v.data[0])), nil
+		return bitcount8(uint8(part ^ v.data[0])), nil
 	case 8:
 		full := a.data[n/8]
 		part := (full >> uint(8*(n%8))) & 0xFF
-		return bitcount16(uint16(part ^ v.data[0])), nil
+		return bitcount8(uint8(part ^ v.data[0])), nil
 	case 16:
 		full := a.data[n/4]
 		part := uint16(full >> uint(16*(n%4)))

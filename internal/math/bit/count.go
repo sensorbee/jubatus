@@ -35,3 +35,10 @@ func bitcount16(x uint16) int {
 	x += x >> 8
 	return int(x & 0x1F)
 }
+
+func bitcount8(x uint8) int {
+	x -= (x >> 1) & 0x55
+	x = (x & 0x33) + ((x >> 2) & 0x33)
+	x += x >> 4
+	return int(x & 0xF)
+}
