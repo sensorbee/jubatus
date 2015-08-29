@@ -153,3 +153,21 @@ func maxDistsIx(dists []IDist) int {
 	}
 	return ix
 }
+
+func calcEuclidLSHScoresAndSortPartially(a Array, x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
+	buf := make([]IDist, len(norms))
+	for i := range buf {
+		hDist, _ := a.HammingDistance(i, x)
+		score := calcEuclidLSHScore(norms[i], norm, cosTable[hDist])
+		buf[i] = IDist{
+			ID:   ID(i + 1),
+			Dist: score,
+		}
+	}
+	partialSortByDist(buf, n)
+	return buf
+}
+
+func calcEuclidLSHScore(normI, norm, cos float32) float32 {
+	return normI * (normI - 2*norm*cos)
+}

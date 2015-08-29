@@ -17,20 +17,6 @@ type Array interface {
 	Save(io.Writer) error
 }
 
-func CalcEuclidLSHScoreAndSortPartially(a Array, x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	buf := make([]IDist, len(norms))
-	for i := range buf {
-		hDist, _ := a.HammingDistance(i, x)
-		score := norms[i] * (norms[i] - 2*norm*cosTable[hDist])
-		buf[i] = IDist{
-			ID:   ID(i + 1),
-			Dist: score,
-		}
-	}
-	partialSortByDist(buf, n)
-	return buf
-}
-
 type largeBitsArray struct {
 	data   buf
 	bitNum int
@@ -169,7 +155,7 @@ func (a *largeBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 }
 
 func (a *largeBitsArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return CalcEuclidLSHScoreAndSortPartially(a, x, norm, norms, cosTable, n)
+	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
 }
 
 func (a *largeBitsArray) Get(n int) (*Vector, error) {
@@ -357,7 +343,7 @@ func (a *smallBitsArray) HammingDistance(n int, v *Vector) (int, error) {
 }
 
 func (a *smallBitsArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return CalcEuclidLSHScoreAndSortPartially(a, x, norm, norms, cosTable, n)
+	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
 }
 
 func (a *smallBitsArray) Get(n int) (*Vector, error) {
@@ -454,7 +440,7 @@ func (a *wordArray) HammingDistance(n int, v *Vector) (int, error) {
 }
 
 func (a *wordArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return CalcEuclidLSHScoreAndSortPartially(a, x, norm, norms, cosTable, n)
+	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
 }
 
 func (a *wordArray) Get(n int) (*Vector, error) {
@@ -552,7 +538,36 @@ func (a *smallPowerOfTwoBitsArray) HammingDistance(n int, v *Vector) (int, error
 }
 
 func (a *smallPowerOfTwoBitsArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return CalcEuclidLSHScoreAndSortPartially(a, x, norm, norms, cosTable, n)
+	if a.bitNum == 32 {
+		buf := make([]IDist, len(norms))
+		m := x.data[0] | x.data[0]<<32
+		for i := 0; i < a.len/2; i++ {
+			ix1, ix2 := 2*i, 2*i+1
+			hDist1, hDist2 := bitcount32s(uint64(a.data[i] ^ m))
+			score1 := calcEuclidLSHScore(norms[ix1], norm, cosTable[hDist1])
+			score2 := calcEuclidLSHScore(norms[ix2], norm, cosTable[hDist2])
+			buf[ix1] = IDist{
+				ID:   ID(ix1 + 1),
+				Dist: score1,
+			}
+			buf[ix2] = IDist{
+				ID:   ID(ix2 + 1),
+				Dist: score2,
+			}
+		}
+		if a.len%2 == 1 {
+			hDist := bitcount32(uint32(a.data[a.len/2] ^ m))
+			score := norms[a.len-1] * (norms[a.len-1] - 2*norm*cosTable[hDist])
+			buf[a.len-1] = IDist{
+				ID:   ID(a.len),
+				Dist: score,
+			}
+		}
+		partialSortByDist(buf, n)
+		return buf
+	}
+
+	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
 }
 
 func (a *smallPowerOfTwoBitsArray) Get(n int) (*Vector, error) {
@@ -636,7 +651,7 @@ func (a *multipleOfWordBitsArray) HammingDistance(n int, v *Vector) (int, error)
 }
 
 func (a *multipleOfWordBitsArray) CalcEuclidLSHScoreAndSortPartially(x *Vector, norm float32, norms []float32, cosTable []float32, n int) []IDist {
-	return CalcEuclidLSHScoreAndSortPartially(a, x, norm, norms, cosTable, n)
+	return calcEuclidLSHScoresAndSortPartially(a, x, norm, norms, cosTable, n)
 }
 
 func (a *multipleOfWordBitsArray) Get(n int) (*Vector, error) {
