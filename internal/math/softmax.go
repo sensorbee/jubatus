@@ -6,6 +6,7 @@ import (
 	"sort"
 )
 
+// Softmax calculates softmax.
 func Softmax(v data.Map) (data.Map, error) {
 	ret := make(data.Map)
 
