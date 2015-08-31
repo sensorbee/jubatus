@@ -6,6 +6,7 @@ import (
 	"io"
 )
 
+// Array is an array of bitvectors.
 type Array interface {
 	Resize(n int)
 	Len() int
@@ -30,6 +31,7 @@ type arrayData struct {
 	Len     int
 }
 
+// NewArray creates an empty new Array.
 func NewArray(bitNum int) Array {
 	return createArray(nil, bitNum, 0)
 }
@@ -277,6 +279,7 @@ func (a *largeBitsArray) Save(w io.Writer) error {
 	return nil
 }
 
+// LoadArray loads an array from io.Reader.
 func LoadArray(r io.Reader) (Array, error) {
 	formatVersion := make([]byte, 1)
 	if _, err := r.Read(formatVersion); err != nil {
