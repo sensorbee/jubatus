@@ -54,6 +54,9 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed i
 	if rnnNum < nnNum {
 		return nil, errors.New("number of reverse nearest neighbor must be greater than or equal to number of nearest neighbor")
 	}
+	if maxSize < 0 {
+		return nil, errors.New("max size must be greater than or equal to zero")
+	}
 
 	var nn nearest.Neighbor
 	switch nnAlgo {
@@ -65,6 +68,18 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed i
 		nn = nearest.NewEuclidLSH(hashNum)
 	default:
 		return nil, errors.New("invalid nearest neighbor algorithm")
+	}
+
+	// maxSize == 0 means no unlearn.
+	// TODO: write godoc
+	if maxSize == 0 {
+		if ^uint(0) == uint(^uint32(0)) {
+			// 32 bit
+			maxSize = int(^uint32(0) >> 1)
+		} else {
+			// 64 bit
+			maxSize = int(^uint(0)>>32 + 1)
+		}
 	}
 
 	return &LightLOF{
