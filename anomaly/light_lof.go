@@ -13,6 +13,7 @@ import (
 	"sync"
 )
 
+// LightLOF holds a model for anomaly detection.
 type LightLOF struct {
 	nn     nearest.Neighbor
 	nnNum  int
@@ -29,14 +30,20 @@ type LightLOF struct {
 }
 
 const (
+	// InvalidNNAlgorithm represents an invalid nearest neighbor algorithm.
 	InvalidNNAlgorithm = iota
+	// LSH represents locality sensitive hashing.
 	LSH
+	// Minhash represents minhash.
 	Minhash
+	// EuclidLSH represents locality sensitive hashing with euclidean distance.
 	EuclidLSH
 )
 
+// NNAlgorithm is an enum type which represents nearest neighbor algorithms.
 type NNAlgorithm int
 
+// NewLightLOF creates a LightLOF model.
 func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed int64) (*LightLOF, error) {
 	if hashNum <= 0 {
 		return nil, errors.New("number of hash bits must be greater than zero")
@@ -85,6 +92,7 @@ type lightLOFMsgpack struct {
 	MaxSize int
 }
 
+// Save saves a LightLOF model.
 func (l *LightLOF) Save(w io.Writer) error {
 	l.m.RLock()
 	defer l.m.RUnlock()
@@ -108,6 +116,7 @@ func (l *LightLOF) Save(w io.Writer) error {
 	return nearest.Save(l.nn, w)
 }
 
+// LoadLightLOF loads a LightLOF model.
 func LoadLightLOF(r io.Reader) (*LightLOF, error) {
 	formatVersion := make([]byte, 1)
 	if _, err := r.Read(formatVersion); err != nil {
@@ -146,6 +155,7 @@ func loadLightLOFFormatV1(r io.Reader) (*LightLOF, error) {
 	}, nil
 }
 
+// Add adds a feature vector to a LightLOF model and calculates its score.
 func (l *LightLOF) Add(v FeatureVector) (score float32, err error) {
 	nnfv, err := v.toNNFV()
 	if err != nil {
@@ -160,6 +170,7 @@ func (l *LightLOF) Add(v FeatureVector) (score float32, err error) {
 	return score, nil
 }
 
+// AddWithoutCalcScore adds a feature vector to a LightLOF model.
 func (l *LightLOF) AddWithoutCalcScore(v FeatureVector) error {
 	nnfv, err := v.toNNFV()
 	if err != nil {
@@ -221,6 +232,7 @@ func (l *LightLOF) add(v nearest.FeatureVector) ID {
 	return ID(nnID)
 }
 
+// CalcScore calculates a score for a feature vector.
 func (l *LightLOF) CalcScore(v FeatureVector) (float32, error) {
 	nnFV, err := v.toNNFV()
 	if err != nil {
@@ -312,6 +324,7 @@ func calcLOF(lrd float32, neighborLRDs []float32) float32 {
 	return sum / (float32(len(neighborLRDs)) * lrd)
 }
 
+// FeatureVector represents a feature vector.
 type FeatureVector data.Map
 
 func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
@@ -325,6 +338,7 @@ func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
 	return ret, nil
 }
 
+// ID is an identifier for a point.
 type ID int64
 
 func minInt(x, y int) int {
