@@ -339,7 +339,7 @@ func (v FeatureVector) toNNFV() (nearest.FeatureVector, error) {
 }
 
 // ID is an identifier for a point.
-type ID int64
+type ID int32
 
 func minInt(x, y int) int {
 	if x < y {

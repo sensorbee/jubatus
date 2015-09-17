@@ -27,7 +27,7 @@ type IDist struct {
 	Dist float32
 }
 
-type ID int64
+type ID int32
 
 var (
 	nnMsgpackHandle = &codec.MsgpackHandle{
