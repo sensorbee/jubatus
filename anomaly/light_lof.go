@@ -31,7 +31,7 @@ type LightLOF struct {
 
 const (
 	// InvalidNNAlgorithm represents an invalid nearest neighbor algorithm.
-	InvalidNNAlgorithm = iota
+	InvalidNNAlgorithm NNAlgorithm = iota
 	// LSH represents locality sensitive hashing.
 	LSH
 	// Minhash represents minhash.
