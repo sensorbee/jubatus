@@ -45,6 +45,10 @@ type NNAlgorithm int
 
 // NewLightLOF creates a LightLOF model.
 func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed int64) (*LightLOF, error) {
+	const maxUint = ^uint(0)
+	const maxUint32 = ^uint32(0)
+	const maxCapacityOn64Bit = int(^maxUint>>32 + 1)
+
 	if hashNum <= 0 {
 		return nil, errors.New("number of hash bits must be greater than zero")
 	}
@@ -57,7 +61,7 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed i
 	if maxSize < 0 {
 		return nil, errors.New("max size must be greater than or equal to zero")
 	}
-	if ^uint(0) != uint(^uint32(0)) && maxSize > int(^uint(0)>>32+1) {
+	if maxUint != uint(maxUint32) && maxSize > maxCapacityOn64Bit {
 		return nil, fmt.Errorf("max size must be less than or equal to %v", int(^uint(0)>>32+1))
 	}
 
@@ -76,12 +80,12 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed i
 	// maxSize == 0 means no unlearn.
 	// TODO: write godoc
 	if maxSize == 0 {
-		if ^uint(0) == uint(^uint32(0)) {
+		if maxUint == uint(maxUint32) {
 			// 32 bit
-			maxSize = int(^uint32(0) >> 1)
+			maxSize = int(maxUint32 >> 1)
 		} else {
 			// 64 bit
-			maxSize = int(^uint(0)>>32 + 1)
+			maxSize = maxCapacityOn64Bit
 		}
 	}
 
