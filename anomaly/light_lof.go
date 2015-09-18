@@ -57,6 +57,9 @@ func NewLightLOF(nnAlgo NNAlgorithm, hashNum, nnNum, rnnNum, maxSize int, seed i
 	if maxSize < 0 {
 		return nil, errors.New("max size must be greater than or equal to zero")
 	}
+	if ^uint(0) != uint(^uint32(0)) && maxSize > int(^uint(0)>>32+1) {
+		return nil, fmt.Errorf("max size must be less than or equal to %v", int(^uint(0)>>32+1))
+	}
 
 	var nn nearest.Neighbor
 	switch nnAlgo {

@@ -79,7 +79,7 @@ func (c *LightLOFStateCreator) CreateState(ctx *core.Context, params data.Map) (
 	var seed int64
 	switch unlearn {
 	case "no":
-		maxSize = int(^uint(0) / 2)
+		maxSize = 0
 	case "random":
 		m, err := pluginutil.ExtractParamAsInt(params, "max_size")
 		if err != nil {
