@@ -153,3 +153,78 @@ func TestFlattenNestedMap(t *testing.T) {
 		})
 	})
 }
+
+func TestFlattenEmptyArray(t *testing.T) {
+	m := data.Map{
+		"a": data.Array{},
+	}
+
+	Convey("Given a data.Map having an empty data.Array", t, func() {
+		Convey("when flatten it", func() {
+			cnt := 0
+			err := Flatten(m, func(string, float32) {
+				cnt++
+			})
+
+			Convey("it should succeed.", func() {
+				So(err, ShouldBeNil)
+
+				Convey("and the appender should not be called.", func() {
+					So(cnt, ShouldBeZeroValue)
+				})
+			})
+		})
+	})
+}
+
+func TestFlattenNonNestedArray(t *testing.T) {
+	m := data.Map{
+		"a": data.Array{data.Float(123), data.Float(456), data.Float(789)},
+	}
+
+	Convey("Given a flat data.Map having a data.Array", t, func() {
+		Convey("when flatten it", func() {
+			a := []*kv{}
+			err := Flatten(m, func(k string, x float32) {
+				a = append(a, &kv{
+					key:   k,
+					value: x,
+				})
+			})
+
+			Convey("it should succeed.", func() {
+				So(err, ShouldBeNil)
+
+				Convey("and the flatten slice should be converted correctly.", func() {
+					So(len(a), ShouldEqual, 3)
+				})
+			})
+		})
+	})
+}
+
+func TestFlattenNestedArray(t *testing.T) {
+	m := data.Map{
+		"a": data.Array{data.Array{}, data.Array{data.Float(123), data.Float(456), data.Float(789)}},
+	}
+
+	Convey("Given a flat data.Map having a data.Array", t, func() {
+		Convey("when flatten it", func() {
+			a := []*kv{}
+			err := Flatten(m, func(k string, x float32) {
+				a = append(a, &kv{
+					key:   k,
+					value: x,
+				})
+			})
+
+			Convey("it should succeed.", func() {
+				So(err, ShouldBeNil)
+
+				Convey("and the flatten slice should be converted correctly.", func() {
+					So(len(a), ShouldEqual, 3)
+				})
+			})
+		})
+	})
+}
