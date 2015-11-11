@@ -15,9 +15,8 @@ import (
 
 // classfierMsgpack has information of the saved file.
 type classifierMsgpack struct {
-	_struct       struct{} `codec:",toarray"`
-	FormatVersion uint8
-	Algorithm     string
+	_struct   struct{} `codec:",toarray"`
+	Algorithm string
 }
 
 // AROWState is a state which support AROW classification algorithm.
@@ -83,29 +82,33 @@ func init() {
 
 // LoadState loads a new state for AROW classifier.
 func (c *AROWStateCreator) LoadState(ctx *core.Context, r io.Reader, params data.Map) (core.SharedState, error) {
-	var d classifierMsgpack
-	dec := codec.NewDecoder(r, classifierMsgpackHandle)
-	if err := dec.Decode(&d); err != nil {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
 		return nil, err
 	}
-	if d.Algorithm != "arow" {
-		return nil, fmt.Errorf("unsupported classification algorithm: %v", d.Algorithm)
-	}
 
-	switch d.FormatVersion {
+	switch formatVersion[0] {
 	case 1:
 		return loadAROWStateFormatV1(ctx, r)
 	default:
-		return nil, fmt.Errorf("unsupported format version of AROWState container: %v", d.FormatVersion)
+		return nil, fmt.Errorf("unsupported format version of AROWState container: %v", formatVersion[0])
 	}
 }
 
 func loadAROWStateFormatV1(ctx *core.Context, r io.Reader) (core.SharedState, error) {
+	var header classifierMsgpack
+	dec := codec.NewDecoder(r, classifierMsgpackHandle)
+	if err := dec.Decode(&header); err != nil {
+		return nil, err
+	}
+	if header.Algorithm != "arow" {
+		return nil, fmt.Errorf("unsupported classification algorithm: %v", header.Algorithm)
+	}
+
 	// This is the current format and no data type conversion is required.
 	s := &AROWState{}
 
 	var d arowStateMsgpack
-	dec := codec.NewDecoder(r, classifierMsgpackHandle)
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
@@ -159,12 +162,15 @@ const (
 
 // Save is provided as a part of core.SavableSharedState.
 func (a *AROWState) Save(ctx *core.Context, w io.Writer, params data.Map) error {
+	if _, err := w.Write([]byte{classifierFormatVersion}); err != nil {
+		return err
+	}
+
 	// This is the format version of the root container and doesn't related to
 	// how each algorithm is saved.
 	enc := codec.NewEncoder(w, classifierMsgpackHandle)
 	if err := enc.Encode(&classifierMsgpack{
-		FormatVersion: classifierFormatVersion,
-		Algorithm:     "arow",
+		Algorithm: "arow",
 	}); err != nil {
 		return err
 	}
