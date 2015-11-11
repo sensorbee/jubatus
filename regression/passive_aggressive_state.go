@@ -14,9 +14,8 @@ import (
 
 // regressionMsgpack has information of the saved file.
 type regressionMsgpack struct {
-	_struct       struct{} `codec:",toarray"`
-	FormatVersion uint8
-	Algorithm     string
+	_struct   struct{} `codec:",toarray"`
+	Algorithm string
 }
 
 type PassiveAggressiveState struct {
@@ -89,28 +88,32 @@ func init() {
 
 // LoadState loads a new state for PassiveAggressive model.
 func (c *PassiveAggressiveStateCreator) LoadState(ctx *core.Context, r io.Reader, params data.Map) (core.SharedState, error) {
-	var d regressionMsgpack
-	dec := codec.NewDecoder(r, regressionMsgpackHandle)
-	if err := dec.Decode(&d); err != nil {
+	formatVersion := make([]byte, 1)
+	if _, err := r.Read(formatVersion); err != nil {
 		return nil, err
 	}
-	if d.Algorithm != "passive_aggressive" {
-		return nil, fmt.Errorf("unsupported regression algorithm: %v", d.Algorithm)
-	}
 
-	switch d.FormatVersion {
+	switch formatVersion[0] {
 	case 1:
 		return loadPassiveAggressiveStateFormatV1(ctx, r)
 	default:
-		return nil, fmt.Errorf("unsupported format version of PassiveAggressiveState container: %v", d.FormatVersion)
+		return nil, fmt.Errorf("unsupported format version of PassiveAggressiveState container: %v", formatVersion[0])
 	}
 }
 
 func loadPassiveAggressiveStateFormatV1(ctx *core.Context, r io.Reader) (core.SharedState, error) {
+	var header regressionMsgpack
+	dec := codec.NewDecoder(r, regressionMsgpackHandle)
+	if err := dec.Decode(&header); err != nil {
+		return nil, err
+	}
+	if header.Algorithm != "passive_aggressive" {
+		return nil, fmt.Errorf("unsupported regression algorithm: %v", header.Algorithm)
+	}
+
 	s := &PassiveAggressiveState{}
 
 	var d paStateMsgpack
-	dec := codec.NewDecoder(r, regressionMsgpackHandle)
 	if err := dec.Decode(&d); err != nil {
 		return nil, err
 	}
@@ -159,10 +162,13 @@ const (
 
 // Save is provided as a part of core.SavableSharedState.
 func (pa *PassiveAggressiveState) Save(ctx *core.Context, w io.Writer, params data.Map) error {
+	if _, err := w.Write([]byte{regressionFormatVersion}); err != nil {
+		return err
+	}
+
 	enc := codec.NewEncoder(w, regressionMsgpackHandle)
 	if err := enc.Encode(&regressionMsgpack{
-		FormatVersion: regressionFormatVersion,
-		Algorithm:     "passive_aggressive",
+		Algorithm: "passive_aggressive",
 	}); err != nil {
 		return err
 	}
