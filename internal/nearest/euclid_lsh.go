@@ -16,9 +16,8 @@ type EuclidLSH struct {
 }
 
 type euclidLSHMsgpack struct {
-	_struct       struct{} `codec:",toarray"`
-	FormatVersion uint8
-	Norms         []float32
+	_struct struct{} `codec:",toarray"`
+	Norms   []float32
 }
 
 const (
@@ -38,10 +37,13 @@ func (e *EuclidLSH) name() string {
 }
 
 func (e *EuclidLSH) save(w io.Writer) error {
+	if _, err := w.Write([]byte{euclidLSHFormatVersion}); err != nil {
+		return err
+	}
+
 	enc := codec.NewEncoder(w, nnMsgpackHandle)
 	if err := enc.Encode(&euclidLSHMsgpack{
-		FormatVersion: euclidLSHFormatVersion,
-		Norms:         e.norms,
+		Norms: e.norms,
 	}); err != nil {
 		return err
 	}
