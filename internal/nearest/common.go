@@ -1,8 +1,8 @@
 package nearest
 
 import (
+	"github.com/sensorbee/jubatus/internal/math/bit"
 	"math/rand"
-	"pfi/sensorbee/jubatus/internal/math/bit"
 	"sort"
 )
 

@@ -2,10 +2,10 @@ package nearest
 
 import (
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/math/bit"
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type EuclidLSH struct {

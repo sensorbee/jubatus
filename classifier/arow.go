@@ -3,11 +3,11 @@ package classifier
 import (
 	"errors"
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/intern"
+	"github.com/sensorbee/jubatus/internal/nested"
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/intern"
-	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )

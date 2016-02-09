@@ -2,8 +2,8 @@ package nearest
 
 import (
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/math/bit"
 	"io"
-	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type LSH struct {

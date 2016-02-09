@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"pfi/sensorbee/jubatus/anomaly"
+	"github.com/sensorbee/jubatus/anomaly"
 	"pfi/sensorbee/sensorbee/bql/udf"
 )
 

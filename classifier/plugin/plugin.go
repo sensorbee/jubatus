@@ -1,8 +1,8 @@
 package plugin
 
 import (
-	"pfi/sensorbee/jubatus/classifier"
-	"pfi/sensorbee/jubatus/internal/math"
+	"github.com/sensorbee/jubatus/classifier"
+	"github.com/sensorbee/jubatus/internal/math"
 	"pfi/sensorbee/sensorbee/bql/udf"
 )
 

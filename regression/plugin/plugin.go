@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"pfi/sensorbee/jubatus/regression"
+	"github.com/sensorbee/jubatus/regression"
 	"pfi/sensorbee/sensorbee/bql/udf"
 )
 

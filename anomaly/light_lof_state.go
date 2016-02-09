@@ -2,9 +2,9 @@ package anomaly
 
 import (
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/pluginutil"
 	"github.com/ugorji/go/codec"
 	"io"
-	"pfi/sensorbee/jubatus/internal/pluginutil"
 	"pfi/sensorbee/sensorbee/bql/udf"
 	"pfi/sensorbee/sensorbee/core"
 	"pfi/sensorbee/sensorbee/data"

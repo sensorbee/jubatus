@@ -3,12 +3,12 @@ package anomaly
 import (
 	"errors"
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/nearest"
+	"github.com/sensorbee/jubatus/internal/nested"
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
 	"math/rand"
-	"pfi/sensorbee/jubatus/internal/nearest"
-	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )

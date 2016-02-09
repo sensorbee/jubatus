@@ -2,9 +2,9 @@ package nearest
 
 import (
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/math/bit"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/math/bit"
 )
 
 type Minhash struct {

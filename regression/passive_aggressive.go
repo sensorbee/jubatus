@@ -3,10 +3,10 @@ package regression
 import (
 	"errors"
 	"fmt"
+	"github.com/sensorbee/jubatus/internal/nested"
 	"github.com/ugorji/go/codec"
 	"io"
 	"math"
-	"pfi/sensorbee/jubatus/internal/nested"
 	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
