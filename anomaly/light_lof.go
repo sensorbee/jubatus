@@ -6,10 +6,10 @@ import (
 	"github.com/sensorbee/jubatus/internal/nearest"
 	"github.com/sensorbee/jubatus/internal/nested"
 	"github.com/ugorji/go/codec"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 	"io"
 	"math"
 	"math/rand"
-	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
 

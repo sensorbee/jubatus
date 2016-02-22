@@ -2,7 +2,7 @@ package plugin
 
 import (
 	"github.com/sensorbee/jubatus/regression"
-	"pfi/sensorbee/sensorbee/bql/udf"
+	"gopkg.in/sensorbee/sensorbee.v0/bql/udf"
 )
 
 func init() {

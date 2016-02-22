@@ -2,8 +2,8 @@ package classifier
 
 import (
 	"fmt"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 	"math/rand"
-	"pfi/sensorbee/sensorbee/data"
 )
 
 type shogun struct {

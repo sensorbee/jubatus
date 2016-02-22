@@ -2,7 +2,7 @@ package pluginutil
 
 import (
 	"fmt"
-	"pfi/sensorbee/sensorbee/data"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 )
 
 func ExtractParamAsStringWithDefault(params data.Map, key, def string) (string, error) {

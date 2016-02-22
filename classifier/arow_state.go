@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/sensorbee/jubatus/internal/pluginutil"
 	"github.com/ugorji/go/codec"
+	"gopkg.in/sensorbee/sensorbee.v0/bql/udf"
+	"gopkg.in/sensorbee/sensorbee.v0/core"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 	"io"
 	"math"
-	"pfi/sensorbee/sensorbee/bql/udf"
-	"pfi/sensorbee/sensorbee/core"
-	"pfi/sensorbee/sensorbee/data"
 	"reflect"
 )
 

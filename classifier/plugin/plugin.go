@@ -3,7 +3,7 @@ package plugin
 import (
 	"github.com/sensorbee/jubatus/classifier"
 	"github.com/sensorbee/jubatus/internal/math"
-	"pfi/sensorbee/sensorbee/bql/udf"
+	"gopkg.in/sensorbee/sensorbee.v0/bql/udf"
 )
 
 func init() {

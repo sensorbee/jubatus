@@ -2,7 +2,7 @@ package nested
 
 import (
 	"fmt"
-	"pfi/sensorbee/sensorbee/data"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 )
 
 type Appender func(string, float32)

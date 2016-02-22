@@ -6,9 +6,9 @@ import (
 	"github.com/sensorbee/jubatus/internal/intern"
 	"github.com/sensorbee/jubatus/internal/nested"
 	"github.com/ugorji/go/codec"
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 	"io"
 	"math"
-	"pfi/sensorbee/sensorbee/data"
 	"sync"
 )
 

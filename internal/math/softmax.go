@@ -1,8 +1,8 @@
 package math
 
 import (
+	"gopkg.in/sensorbee/sensorbee.v0/data"
 	"math"
-	"pfi/sensorbee/sensorbee/data"
 	"sort"
 )
 
