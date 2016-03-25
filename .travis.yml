@@ -1,0 +1,30 @@
+language: go
+go:
+  - 1.4.3
+  - 1.5.3
+  - 1.6
+
+sudo: false
+
+notifications:
+  email: false
+
+go_import_path: github.com/sensorbee/jubatus
+
+before_install:
+  - env
+  - lsb_release -a
+  - go version
+
+install:
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/pierrre/gotestcover
+  - go get -t -d -v ./...
+
+script:
+  - go build -v ./...
+  - gotestcover -v -covermode=count -coverprofile=.profile.cov ./...
+
+after_success:
+  - if [ "$TRAVIS_GO_VERSION" = "1.6" ]; then goveralls -coverprofile=.profile.cov -repotoken $COVERALLS_TOKEN; fi
